@@ -1,0 +1,1145 @@
+640_640
+Loading engine...
+-----1---42
+-----2---42
+name is (Unnamed Layer* 186) [PluginV2]
+name is (Unnamed Layer* 189) [PluginV2]
+name is (Unnamed Layer* 192) [PluginV2]
+name is (Unnamed Layer* 195) [PluginV2]
+name is (Unnamed Layer* 198) [PluginV2]
+name is (Unnamed Layer* 201) [PluginV2]
+name is (Unnamed Layer* 204) [PluginV2]
+name is (Unnamed Layer* 207) [PluginV2]
+name is (Unnamed Layer* 218) [PluginV2]
+name is (Unnamed Layer* 221) [PluginV2]
+name is (Unnamed Layer* 224) [PluginV2]
+name is (Unnamed Layer* 227) [PluginV2]
+name is (Unnamed Layer* 230) [PluginV2]
+name is (Unnamed Layer* 233) [PluginV2]
+name is (Unnamed Layer* 236) [PluginV2]
+name is (Unnamed Layer* 239) [PluginV2]
+name is (Unnamed Layer* 250) [PluginV2]
+name is (Unnamed Layer* 253) [PluginV2]
+name is (Unnamed Layer* 256) [PluginV2]
+name is (Unnamed Layer* 259) [PluginV2]
+name is (Unnamed Layer* 262) [PluginV2]
+name is (Unnamed Layer* 265) [PluginV2]
+name is (Unnamed Layer* 268) [PluginV2]
+name is (Unnamed Layer* 271) [PluginV2]
+name is (Unnamed Layer* 282) [PluginV2]
+name is (Unnamed Layer* 285) [PluginV2]
+name is (Unnamed Layer* 288) [PluginV2]
+name is (Unnamed Layer* 291) [PluginV2]
+name is (Unnamed Layer* 294) [PluginV2]
+name is (Unnamed Layer* 297) [PluginV2]
+name is (Unnamed Layer* 300) [PluginV2]
+name is (Unnamed Layer* 303) [PluginV2]
+name is (Unnamed Layer* 314) [PluginV2]
+name is (Unnamed Layer* 317) [PluginV2]
+name is (Unnamed Layer* 320) [PluginV2]
+name is (Unnamed Layer* 323) [PluginV2]
+name is (Unnamed Layer* 326) [PluginV2]
+name is (Unnamed Layer* 329) [PluginV2]
+name is (Unnamed Layer* 332) [PluginV2]
+name is (Unnamed Layer* 335) [PluginV2]
+-----3---42
+-----4---42
+640,640;640,640
+Running inference...
+Took 10.8369 ms per inference.
+for eclipse:
+kernel: /home/user/project/run_retina/build/libinfer_test.so fcos_int8_640_640.plan
+(1, 3, 512, 640) float32
+here
+for precision:
+((640, 640),)
+loading annotations into memory...
+Done (t=0.21s)
+creating index...
+index created!
+********** int8_640_640_S.npz
+kernel: /home/user/project/run_retina/build/libinfer_2.so
+init: b'/home/user/project/run_retina/weights/fcos_int8_640_640.plan'
+[640, 640, 8, 100, 0, 0, 0, 0, 0, 0]
+b'/home/user/project/run_retina/weights/fcos_int8_640_640.plan'
+(read: 0.004s) (engine: 0.040s) (infer: 0.047s) , 21.5 im/s
+(read: 0.004s) (engine: 0.039s) (infer: 0.046s) , 21.9 im/s
+(read: 0.004s) (engine: 0.045s) (infer: 0.052s) , 19.3 im/s
+(read: 0.004s) (engine: 0.044s) (infer: 0.051s) , 19.7 im/s
+(read: 0.004s) (engine: 0.046s) (infer: 0.052s) , 19.1 im/s
+(read: 0.004s) (engine: 0.045s) (infer: 0.052s) , 19.2 im/s
+(read: 0.004s) (engine: 0.046s) (infer: 0.052s) , 19.1 im/s
+(read: 0.004s) (engine: 0.046s) (infer: 0.052s) , 19.1 im/s
+(read: 0.004s) (engine: 0.045s) (infer: 0.052s) , 19.1 im/s
+(read: 0.004s) (engine: 0.046s) (infer: 0.053s) , 18.8 im/s
+(read: 0.004s) (engine: 0.046s) (infer: 0.053s) , 18.8 im/s
+(read: 0.004s) (engine: 0.046s) (infer: 0.053s) , 18.8 im/s
+(read: 0.004s) (engine: 0.046s) (infer: 0.053s) , 18.9 im/s
+(read: 0.004s) (engine: 0.046s) (infer: 0.053s) , 18.9 im/s
+(read: 0.004s) (engine: 0.042s) (infer: 0.049s) , 20.5 im/s
+(read: 0.004s) (engine: 0.040s) (infer: 0.047s) , 21.2 im/s
+(read: 0.004s) (engine: 0.040s) (infer: 0.047s) , 21.3 im/s
+(read: 0.004s) (engine: 0.046s) (infer: 0.052s) , 19.1 im/s
+(read: 0.004s) (engine: 0.046s) (infer: 0.053s) , 19.0 im/s
+(read: 0.004s) (engine: 0.046s) (infer: 0.053s) , 19.0 im/s
+(read: 0.004s) (engine: 0.046s) (infer: 0.053s) , 19.0 im/s
+(read: 0.004s) (engine: 0.046s) (infer: 0.052s) , 19.1 im/s
+(read: 0.004s) (engine: 0.046s) (infer: 0.052s) , 19.1 im/s
+(read: 0.004s) (engine: 0.046s) (infer: 0.053s) , 19.0 im/s
+(read: 0.004s) (engine: 0.046s) (infer: 0.053s) , 19.0 im/s
+********** int8_640_640_S **********
+-----1---42
+-----2---42
+name is (Unnamed Layer* 186) [PluginV2]
+name is (Unnamed Layer* 189) [PluginV2]
+name is (Unnamed Layer* 192) [PluginV2]
+name is (Unnamed Layer* 195) [PluginV2]
+name is (Unnamed Layer* 198) [PluginV2]
+name is (Unnamed Layer* 201) [PluginV2]
+name is (Unnamed Layer* 204) [PluginV2]
+name is (Unnamed Layer* 207) [PluginV2]
+name is (Unnamed Layer* 218) [PluginV2]
+name is (Unnamed Layer* 221) [PluginV2]
+name is (Unnamed Layer* 224) [PluginV2]
+name is (Unnamed Layer* 227) [PluginV2]
+name is (Unnamed Layer* 230) [PluginV2]
+name is (Unnamed Layer* 233) [PluginV2]
+name is (Unnamed Layer* 236) [PluginV2]
+name is (Unnamed Layer* 239) [PluginV2]
+name is (Unnamed Layer* 250) [PluginV2]
+name is (Unnamed Layer* 253) [PluginV2]
+name is (Unnamed Layer* 256) [PluginV2]
+name is (Unnamed Layer* 259) [PluginV2]
+name is (Unnamed Layer* 262) [PluginV2]
+name is (Unnamed Layer* 265) [PluginV2]
+name is (Unnamed Layer* 268) [PluginV2]
+name is (Unnamed Layer* 271) [PluginV2]
+name is (Unnamed Layer* 282) [PluginV2]
+name is (Unnamed Layer* 285) [PluginV2]
+name is (Unnamed Layer* 288) [PluginV2]
+name is (Unnamed Layer* 291) [PluginV2]
+name is (Unnamed Layer* 294) [PluginV2]
+name is (Unnamed Layer* 297) [PluginV2]
+name is (Unnamed Layer* 300) [PluginV2]
+name is (Unnamed Layer* 303) [PluginV2]
+name is (Unnamed Layer* 314) [PluginV2]
+name is (Unnamed Layer* 317) [PluginV2]
+name is (Unnamed Layer* 320) [PluginV2]
+name is (Unnamed Layer* 323) [PluginV2]
+name is (Unnamed Layer* 326) [PluginV2]
+name is (Unnamed Layer* 329) [PluginV2]
+name is (Unnamed Layer* 332) [PluginV2]
+name is (Unnamed Layer* 335) [PluginV2]
+-----3---42
+-----4---42
+engine & 0x558e119b3300for precision:
+((640, 640),)
+loading annotations into memory...
+Done (t=0.22s)
+creating index...
+index created!
+********** int8_640_640_S.npz
+
+*-* test int8_640_640_S.npz now! *-*
+
+Evaluating model...
+Loading and preparing results...
+DONE (t=0.31s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=13.97s).
+Accumulating evaluation results...
+DONE (t=1.03s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.47473
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.73446
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.49756
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.24992
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.55037
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.72084
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.18591
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.51394
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.58290
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.35230
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.67746
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.81730
+640_1280
+Loading engine...
+-----1---42
+-----2---42
+name is (Unnamed Layer* 186) [PluginV2]
+name is (Unnamed Layer* 189) [PluginV2]
+name is (Unnamed Layer* 192) [PluginV2]
+name is (Unnamed Layer* 195) [PluginV2]
+name is (Unnamed Layer* 198) [PluginV2]
+name is (Unnamed Layer* 201) [PluginV2]
+name is (Unnamed Layer* 204) [PluginV2]
+name is (Unnamed Layer* 207) [PluginV2]
+name is (Unnamed Layer* 218) [PluginV2]
+name is (Unnamed Layer* 221) [PluginV2]
+name is (Unnamed Layer* 224) [PluginV2]
+name is (Unnamed Layer* 227) [PluginV2]
+name is (Unnamed Layer* 230) [PluginV2]
+name is (Unnamed Layer* 233) [PluginV2]
+name is (Unnamed Layer* 236) [PluginV2]
+name is (Unnamed Layer* 239) [PluginV2]
+name is (Unnamed Layer* 250) [PluginV2]
+name is (Unnamed Layer* 253) [PluginV2]
+name is (Unnamed Layer* 256) [PluginV2]
+name is (Unnamed Layer* 259) [PluginV2]
+name is (Unnamed Layer* 262) [PluginV2]
+name is (Unnamed Layer* 265) [PluginV2]
+name is (Unnamed Layer* 268) [PluginV2]
+name is (Unnamed Layer* 271) [PluginV2]
+name is (Unnamed Layer* 282) [PluginV2]
+name is (Unnamed Layer* 285) [PluginV2]
+name is (Unnamed Layer* 288) [PluginV2]
+name is (Unnamed Layer* 291) [PluginV2]
+name is (Unnamed Layer* 294) [PluginV2]
+name is (Unnamed Layer* 297) [PluginV2]
+name is (Unnamed Layer* 300) [PluginV2]
+name is (Unnamed Layer* 303) [PluginV2]
+name is (Unnamed Layer* 314) [PluginV2]
+name is (Unnamed Layer* 317) [PluginV2]
+name is (Unnamed Layer* 320) [PluginV2]
+name is (Unnamed Layer* 323) [PluginV2]
+name is (Unnamed Layer* 326) [PluginV2]
+name is (Unnamed Layer* 329) [PluginV2]
+name is (Unnamed Layer* 332) [PluginV2]
+name is (Unnamed Layer* 335) [PluginV2]
+-----3---42
+-----4---42
+1280,640;640,1280
+Running inference...
+Took 18.4878 ms per inference.
+for eclipse:
+kernel: /home/user/project/run_retina/build/libinfer_test.so fcos_int8_640_1280.plan
+(1, 3, 512, 640) float32
+here
+for precision:
+((640, 1280),)
+loading annotations into memory...
+Done (t=0.22s)
+creating index...
+index created!
+********** int8_640_1280_S.npz
+kernel: /home/user/project/run_retina/build/libinfer_2.so
+init: b'/home/user/project/run_retina/weights/fcos_int8_640_1280.plan'
+[640, 1280, 8, 100, 0, 0, 0, 0, 0, 0]
+b'/home/user/project/run_retina/weights/fcos_int8_640_1280.plan'
+(read: 0.005s) (engine: 0.090s) (infer: 0.100s) , 10.0 im/s
+(read: 0.005s) (engine: 0.084s) (infer: 0.095s) , 10.5 im/s
+(read: 0.005s) (engine: 0.089s) (infer: 0.100s) , 10.0 im/s
+(read: 0.005s) (engine: 0.076s) (infer: 0.087s) , 11.4 im/s
+(read: 0.005s) (engine: 0.072s) (infer: 0.083s) , 12.0 im/s
+(read: 0.005s) (engine: 0.088s) (infer: 0.099s) , 10.1 im/s
+(read: 0.005s) (engine: 0.059s) (infer: 0.070s) , 14.4 im/s
+(read: 0.005s) (engine: 0.072s) (infer: 0.083s) , 12.0 im/s
+(read: 0.005s) (engine: 0.081s) (infer: 0.092s) , 10.8 im/s
+(read: 0.005s) (engine: 0.072s) (infer: 0.083s) , 12.1 im/s
+(read: 0.005s) (engine: 0.063s) (infer: 0.073s) , 13.6 im/s
+(read: 0.005s) (engine: 0.063s) (infer: 0.074s) , 13.5 im/s
+(read: 0.005s) (engine: 0.087s) (infer: 0.097s) , 10.3 im/s
+(read: 0.005s) (engine: 0.067s) (infer: 0.078s) , 12.8 im/s
+(read: 0.005s) (engine: 0.081s) (infer: 0.092s) , 10.9 im/s
+(read: 0.005s) (engine: 0.089s) (infer: 0.100s) , 10.0 im/s
+(read: 0.005s) (engine: 0.082s) (infer: 0.093s) , 10.8 im/s
+(read: 0.005s) (engine: 0.089s) (infer: 0.100s) , 10.0 im/s
+(read: 0.005s) (engine: 0.073s) (infer: 0.084s) , 11.9 im/s
+(read: 0.005s) (engine: 0.083s) (infer: 0.094s) , 10.6 im/s
+(read: 0.005s) (engine: 0.089s) (infer: 0.100s) , 10.0 im/s
+(read: 0.005s) (engine: 0.080s) (infer: 0.091s) , 11.0 im/s
+(read: 0.005s) (engine: 0.087s) (infer: 0.098s) , 10.2 im/s
+(read: 0.005s) (engine: 0.082s) (infer: 0.093s) , 10.8 im/s
+(read: 0.005s) (engine: 0.085s) (infer: 0.096s) , 10.4 im/s
+(read: 0.005s) (engine: 0.086s) (infer: 0.097s) , 10.3 im/s
+(read: 0.005s) (engine: 0.089s) (infer: 0.100s) , 10.0 im/s
+(read: 0.005s) (engine: 0.089s) (infer: 0.100s) , 10.0 im/s
+(read: 0.005s) (engine: 0.089s) (infer: 0.100s) , 10.0 im/s
+(read: 0.005s) (engine: 0.089s) (infer: 0.100s) , 10.0 im/s
+(read: 0.005s) (engine: 0.089s) (infer: 0.100s) , 10.0 im/s
+(read: 0.005s) (engine: 0.089s) (infer: 0.100s) , 10.0 im/s
+(read: 0.005s) (engine: 0.089s) (infer: 0.099s) , 10.1 im/s
+(read: 0.005s) (engine: 0.077s) (infer: 0.087s) , 11.5 im/s
+(read: 0.005s) (engine: 0.082s) (infer: 0.092s) , 10.8 im/s
+(read: 0.005s) (engine: 0.077s) (infer: 0.088s) , 11.4 im/s
+(read: 0.005s) (engine: 0.085s) (infer: 0.096s) , 10.5 im/s
+(read: 0.005s) (engine: 0.060s) (infer: 0.070s) , 14.2 im/s
+(read: 0.005s) (engine: 0.055s) (infer: 0.065s) , 15.3 im/s
+(read: 0.005s) (engine: 0.079s) (infer: 0.089s) , 11.2 im/s
+(read: 0.005s) (engine: 0.086s) (infer: 0.096s) , 10.4 im/s
+(read: 0.005s) (engine: 0.089s) (infer: 0.099s) , 10.1 im/s
+(read: 0.005s) (engine: 0.089s) (infer: 0.100s) , 10.0 im/s
+(read: 0.005s) (engine: 0.089s) (infer: 0.100s) , 10.0 im/s
+(read: 0.005s) (engine: 0.089s) (infer: 0.100s) , 10.0 im/s
+********** int8_640_1280_S **********
+-----1---42
+-----2---42
+name is (Unnamed Layer* 186) [PluginV2]
+name is (Unnamed Layer* 189) [PluginV2]
+name is (Unnamed Layer* 192) [PluginV2]
+name is (Unnamed Layer* 195) [PluginV2]
+name is (Unnamed Layer* 198) [PluginV2]
+name is (Unnamed Layer* 201) [PluginV2]
+name is (Unnamed Layer* 204) [PluginV2]
+name is (Unnamed Layer* 207) [PluginV2]
+name is (Unnamed Layer* 218) [PluginV2]
+name is (Unnamed Layer* 221) [PluginV2]
+name is (Unnamed Layer* 224) [PluginV2]
+name is (Unnamed Layer* 227) [PluginV2]
+name is (Unnamed Layer* 230) [PluginV2]
+name is (Unnamed Layer* 233) [PluginV2]
+name is (Unnamed Layer* 236) [PluginV2]
+name is (Unnamed Layer* 239) [PluginV2]
+name is (Unnamed Layer* 250) [PluginV2]
+name is (Unnamed Layer* 253) [PluginV2]
+name is (Unnamed Layer* 256) [PluginV2]
+name is (Unnamed Layer* 259) [PluginV2]
+name is (Unnamed Layer* 262) [PluginV2]
+name is (Unnamed Layer* 265) [PluginV2]
+name is (Unnamed Layer* 268) [PluginV2]
+name is (Unnamed Layer* 271) [PluginV2]
+name is (Unnamed Layer* 282) [PluginV2]
+name is (Unnamed Layer* 285) [PluginV2]
+name is (Unnamed Layer* 288) [PluginV2]
+name is (Unnamed Layer* 291) [PluginV2]
+name is (Unnamed Layer* 294) [PluginV2]
+name is (Unnamed Layer* 297) [PluginV2]
+name is (Unnamed Layer* 300) [PluginV2]
+name is (Unnamed Layer* 303) [PluginV2]
+name is (Unnamed Layer* 314) [PluginV2]
+name is (Unnamed Layer* 317) [PluginV2]
+name is (Unnamed Layer* 320) [PluginV2]
+name is (Unnamed Layer* 323) [PluginV2]
+name is (Unnamed Layer* 326) [PluginV2]
+name is (Unnamed Layer* 329) [PluginV2]
+name is (Unnamed Layer* 332) [PluginV2]
+name is (Unnamed Layer* 335) [PluginV2]
+-----3---42
+-----4---42
+engine & 0x5644cb5a0530for precision:
+((640, 1280),)
+loading annotations into memory...
+Done (t=0.21s)
+creating index...
+index created!
+********** int8_640_1280_S.npz
+
+*-* test int8_640_1280_S.npz now! *-*
+
+Evaluating model...
+Loading and preparing results...
+DONE (t=0.34s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=15.03s).
+Accumulating evaluation results...
+DONE (t=1.19s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.51405
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.77119
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.54810
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.32102
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.59651
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.71805
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.19096
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.54982
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.62802
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.43612
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.70639
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.82403
+768_768
+Loading engine...
+-----1---42
+-----2---42
+name is (Unnamed Layer* 186) [PluginV2]
+name is (Unnamed Layer* 189) [PluginV2]
+name is (Unnamed Layer* 192) [PluginV2]
+name is (Unnamed Layer* 195) [PluginV2]
+name is (Unnamed Layer* 198) [PluginV2]
+name is (Unnamed Layer* 201) [PluginV2]
+name is (Unnamed Layer* 204) [PluginV2]
+name is (Unnamed Layer* 207) [PluginV2]
+name is (Unnamed Layer* 218) [PluginV2]
+name is (Unnamed Layer* 221) [PluginV2]
+name is (Unnamed Layer* 224) [PluginV2]
+name is (Unnamed Layer* 227) [PluginV2]
+name is (Unnamed Layer* 230) [PluginV2]
+name is (Unnamed Layer* 233) [PluginV2]
+name is (Unnamed Layer* 236) [PluginV2]
+name is (Unnamed Layer* 239) [PluginV2]
+name is (Unnamed Layer* 250) [PluginV2]
+name is (Unnamed Layer* 253) [PluginV2]
+name is (Unnamed Layer* 256) [PluginV2]
+name is (Unnamed Layer* 259) [PluginV2]
+name is (Unnamed Layer* 262) [PluginV2]
+name is (Unnamed Layer* 265) [PluginV2]
+name is (Unnamed Layer* 268) [PluginV2]
+name is (Unnamed Layer* 271) [PluginV2]
+name is (Unnamed Layer* 282) [PluginV2]
+name is (Unnamed Layer* 285) [PluginV2]
+name is (Unnamed Layer* 288) [PluginV2]
+name is (Unnamed Layer* 291) [PluginV2]
+name is (Unnamed Layer* 294) [PluginV2]
+name is (Unnamed Layer* 297) [PluginV2]
+name is (Unnamed Layer* 300) [PluginV2]
+name is (Unnamed Layer* 303) [PluginV2]
+name is (Unnamed Layer* 314) [PluginV2]
+name is (Unnamed Layer* 317) [PluginV2]
+name is (Unnamed Layer* 320) [PluginV2]
+name is (Unnamed Layer* 323) [PluginV2]
+name is (Unnamed Layer* 326) [PluginV2]
+name is (Unnamed Layer* 329) [PluginV2]
+name is (Unnamed Layer* 332) [PluginV2]
+name is (Unnamed Layer* 335) [PluginV2]
+-----3---42
+-----4---42
+768,768;768,768
+Running inference...
+Took 17.0807 ms per inference.
+for eclipse:
+kernel: /home/user/project/run_retina/build/libinfer_test.so fcos_int8_768_768.plan
+(1, 3, 512, 640) float32
+here
+for precision:
+((768, 768),)
+loading annotations into memory...
+Done (t=0.22s)
+creating index...
+index created!
+********** int8_768_768_S.npz
+kernel: /home/user/project/run_retina/build/libinfer_2.so
+init: b'/home/user/project/run_retina/weights/fcos_int8_768_768.plan'
+[768, 768, 8, 100, 0, 0, 0, 0, 0, 0]
+b'/home/user/project/run_retina/weights/fcos_int8_768_768.plan'
+(read: 0.005s) (engine: 0.056s) (infer: 0.065s) , 15.5 im/s
+(read: 0.005s) (engine: 0.058s) (infer: 0.068s) , 14.8 im/s
+(read: 0.005s) (engine: 0.058s) (infer: 0.067s) , 14.9 im/s
+(read: 0.005s) (engine: 0.052s) (infer: 0.061s) , 16.3 im/s
+(read: 0.005s) (engine: 0.060s) (infer: 0.069s) , 14.5 im/s
+(read: 0.005s) (engine: 0.064s) (infer: 0.073s) , 13.6 im/s
+(read: 0.005s) (engine: 0.064s) (infer: 0.073s) , 13.6 im/s
+(read: 0.005s) (engine: 0.064s) (infer: 0.073s) , 13.6 im/s
+(read: 0.005s) (engine: 0.064s) (infer: 0.073s) , 13.6 im/s
+(read: 0.005s) (engine: 0.064s) (infer: 0.073s) , 13.6 im/s
+(read: 0.005s) (engine: 0.064s) (infer: 0.073s) , 13.6 im/s
+(read: 0.005s) (engine: 0.064s) (infer: 0.073s) , 13.7 im/s
+(read: 0.005s) (engine: 0.064s) (infer: 0.073s) , 13.7 im/s
+(read: 0.005s) (engine: 0.064s) (infer: 0.073s) , 13.6 im/s
+(read: 0.005s) (engine: 0.064s) (infer: 0.074s) , 13.6 im/s
+(read: 0.005s) (engine: 0.064s) (infer: 0.073s) , 13.7 im/s
+(read: 0.005s) (engine: 0.064s) (infer: 0.073s) , 13.6 im/s
+(read: 0.005s) (engine: 0.064s) (infer: 0.073s) , 13.6 im/s
+(read: 0.005s) (engine: 0.064s) (infer: 0.073s) , 13.7 im/s
+(read: 0.005s) (engine: 0.065s) (infer: 0.074s) , 13.6 im/s
+(read: 0.005s) (engine: 0.065s) (infer: 0.074s) , 13.5 im/s
+(read: 0.005s) (engine: 0.064s) (infer: 0.074s) , 13.6 im/s
+(read: 0.005s) (engine: 0.064s) (infer: 0.074s) , 13.5 im/s
+(read: 0.005s) (engine: 0.064s) (infer: 0.074s) , 13.5 im/s
+(read: 0.005s) (engine: 0.065s) (infer: 0.074s) , 13.5 im/s
+(read: 0.005s) (engine: 0.064s) (infer: 0.074s) , 13.6 im/s
+(read: 0.005s) (engine: 0.064s) (infer: 0.074s) , 13.5 im/s
+(read: 0.005s) (engine: 0.064s) (infer: 0.074s) , 13.6 im/s
+(read: 0.005s) (engine: 0.064s) (infer: 0.074s) , 13.6 im/s
+(read: 0.005s) (engine: 0.065s) (infer: 0.074s) , 13.5 im/s
+(read: 0.005s) (engine: 0.065s) (infer: 0.074s) , 13.5 im/s
+(read: 0.005s) (engine: 0.060s) (infer: 0.069s) , 14.4 im/s
+(read: 0.005s) (engine: 0.062s) (infer: 0.071s) , 14.1 im/s
+(read: 0.005s) (engine: 0.046s) (infer: 0.055s) , 18.1 im/s
+(read: 0.005s) (engine: 0.051s) (infer: 0.060s) , 16.7 im/s
+********** int8_768_768_S **********
+-----1---42
+-----2---42
+name is (Unnamed Layer* 186) [PluginV2]
+name is (Unnamed Layer* 189) [PluginV2]
+name is (Unnamed Layer* 192) [PluginV2]
+name is (Unnamed Layer* 195) [PluginV2]
+name is (Unnamed Layer* 198) [PluginV2]
+name is (Unnamed Layer* 201) [PluginV2]
+name is (Unnamed Layer* 204) [PluginV2]
+name is (Unnamed Layer* 207) [PluginV2]
+name is (Unnamed Layer* 218) [PluginV2]
+name is (Unnamed Layer* 221) [PluginV2]
+name is (Unnamed Layer* 224) [PluginV2]
+name is (Unnamed Layer* 227) [PluginV2]
+name is (Unnamed Layer* 230) [PluginV2]
+name is (Unnamed Layer* 233) [PluginV2]
+name is (Unnamed Layer* 236) [PluginV2]
+name is (Unnamed Layer* 239) [PluginV2]
+name is (Unnamed Layer* 250) [PluginV2]
+name is (Unnamed Layer* 253) [PluginV2]
+name is (Unnamed Layer* 256) [PluginV2]
+name is (Unnamed Layer* 259) [PluginV2]
+name is (Unnamed Layer* 262) [PluginV2]
+name is (Unnamed Layer* 265) [PluginV2]
+name is (Unnamed Layer* 268) [PluginV2]
+name is (Unnamed Layer* 271) [PluginV2]
+name is (Unnamed Layer* 282) [PluginV2]
+name is (Unnamed Layer* 285) [PluginV2]
+name is (Unnamed Layer* 288) [PluginV2]
+name is (Unnamed Layer* 291) [PluginV2]
+name is (Unnamed Layer* 294) [PluginV2]
+name is (Unnamed Layer* 297) [PluginV2]
+name is (Unnamed Layer* 300) [PluginV2]
+name is (Unnamed Layer* 303) [PluginV2]
+name is (Unnamed Layer* 314) [PluginV2]
+name is (Unnamed Layer* 317) [PluginV2]
+name is (Unnamed Layer* 320) [PluginV2]
+name is (Unnamed Layer* 323) [PluginV2]
+name is (Unnamed Layer* 326) [PluginV2]
+name is (Unnamed Layer* 329) [PluginV2]
+name is (Unnamed Layer* 332) [PluginV2]
+name is (Unnamed Layer* 335) [PluginV2]
+-----3---42
+-----4---42
+engine & 0x55cc3e15d460for precision:
+((768, 768),)
+loading annotations into memory...
+Done (t=0.21s)
+creating index...
+index created!
+********** int8_768_768_S.npz
+
+*-* test int8_768_768_S.npz now! *-*
+
+Evaluating model...
+Loading and preparing results...
+DONE (t=0.32s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=14.22s).
+Accumulating evaluation results...
+DONE (t=1.05s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.50108
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.76349
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.53181
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.29247
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.57620
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.72096
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.18963
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.53911
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.61252
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.40599
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.69729
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.82229
+768_1536
+Loading engine...
+-----1---42
+-----2---42
+name is (Unnamed Layer* 186) [PluginV2]
+name is (Unnamed Layer* 189) [PluginV2]
+name is (Unnamed Layer* 192) [PluginV2]
+name is (Unnamed Layer* 195) [PluginV2]
+name is (Unnamed Layer* 198) [PluginV2]
+name is (Unnamed Layer* 201) [PluginV2]
+name is (Unnamed Layer* 204) [PluginV2]
+name is (Unnamed Layer* 207) [PluginV2]
+name is (Unnamed Layer* 218) [PluginV2]
+name is (Unnamed Layer* 221) [PluginV2]
+name is (Unnamed Layer* 224) [PluginV2]
+name is (Unnamed Layer* 227) [PluginV2]
+name is (Unnamed Layer* 230) [PluginV2]
+name is (Unnamed Layer* 233) [PluginV2]
+name is (Unnamed Layer* 236) [PluginV2]
+name is (Unnamed Layer* 239) [PluginV2]
+name is (Unnamed Layer* 250) [PluginV2]
+name is (Unnamed Layer* 253) [PluginV2]
+name is (Unnamed Layer* 256) [PluginV2]
+name is (Unnamed Layer* 259) [PluginV2]
+name is (Unnamed Layer* 262) [PluginV2]
+name is (Unnamed Layer* 265) [PluginV2]
+name is (Unnamed Layer* 268) [PluginV2]
+name is (Unnamed Layer* 271) [PluginV2]
+name is (Unnamed Layer* 282) [PluginV2]
+name is (Unnamed Layer* 285) [PluginV2]
+name is (Unnamed Layer* 288) [PluginV2]
+name is (Unnamed Layer* 291) [PluginV2]
+name is (Unnamed Layer* 294) [PluginV2]
+name is (Unnamed Layer* 297) [PluginV2]
+name is (Unnamed Layer* 300) [PluginV2]
+name is (Unnamed Layer* 303) [PluginV2]
+name is (Unnamed Layer* 314) [PluginV2]
+name is (Unnamed Layer* 317) [PluginV2]
+name is (Unnamed Layer* 320) [PluginV2]
+name is (Unnamed Layer* 323) [PluginV2]
+name is (Unnamed Layer* 326) [PluginV2]
+name is (Unnamed Layer* 329) [PluginV2]
+name is (Unnamed Layer* 332) [PluginV2]
+name is (Unnamed Layer* 335) [PluginV2]
+-----3---42
+-----4---42
+1536,768;768,1536
+Running inference...
+Took 25.9333 ms per inference.
+for eclipse:
+kernel: /home/user/project/run_retina/build/libinfer_test.so fcos_int8_768_1536.plan
+(1, 3, 512, 640) float32
+here
+for precision:
+((768, 1536),)
+loading annotations into memory...
+Done (t=0.22s)
+creating index...
+index created!
+********** int8_768_1536_S.npz
+kernel: /home/user/project/run_retina/build/libinfer_2.so
+init: b'/home/user/project/run_retina/weights/fcos_int8_768_1536.plan'
+[768, 1536, 8, 100, 0, 0, 0, 0, 0, 0]
+b'/home/user/project/run_retina/weights/fcos_int8_768_1536.plan'
+(read: 0.006s) (engine: 0.110s) (infer: 0.122s) , 8.2 im/s
+(read: 0.005s) (engine: 0.098s) (infer: 0.111s) , 9.0 im/s
+(read: 0.005s) (engine: 0.086s) (infer: 0.100s) , 10.0 im/s
+(read: 0.005s) (engine: 0.102s) (infer: 0.116s) , 8.6 im/s
+(read: 0.005s) (engine: 0.114s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.099s) (infer: 0.113s) , 8.8 im/s
+(read: 0.005s) (engine: 0.101s) (infer: 0.115s) , 8.7 im/s
+(read: 0.005s) (engine: 0.109s) (infer: 0.123s) , 8.1 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.106s) (infer: 0.120s) , 8.4 im/s
+(read: 0.005s) (engine: 0.098s) (infer: 0.111s) , 9.0 im/s
+(read: 0.005s) (engine: 0.107s) (infer: 0.121s) , 8.3 im/s
+(read: 0.005s) (engine: 0.102s) (infer: 0.115s) , 8.7 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.114s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.114s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.114s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.114s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.114s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.114s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.114s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.114s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.114s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.114s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.114s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.114s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.114s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.114s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.114s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.114s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.116s) (infer: 0.129s) , 7.7 im/s
+(read: 0.005s) (engine: 0.116s) (infer: 0.130s) , 7.7 im/s
+(read: 0.005s) (engine: 0.118s) (infer: 0.132s) , 7.6 im/s
+(read: 0.005s) (engine: 0.116s) (infer: 0.130s) , 7.7 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.114s) (infer: 0.128s) , 7.8 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.128s) , 7.8 im/s
+********** int8_768_1536_S **********
+-----1---42
+-----2---42
+name is (Unnamed Layer* 186) [PluginV2]
+name is (Unnamed Layer* 189) [PluginV2]
+name is (Unnamed Layer* 192) [PluginV2]
+name is (Unnamed Layer* 195) [PluginV2]
+name is (Unnamed Layer* 198) [PluginV2]
+name is (Unnamed Layer* 201) [PluginV2]
+name is (Unnamed Layer* 204) [PluginV2]
+name is (Unnamed Layer* 207) [PluginV2]
+name is (Unnamed Layer* 218) [PluginV2]
+name is (Unnamed Layer* 221) [PluginV2]
+name is (Unnamed Layer* 224) [PluginV2]
+name is (Unnamed Layer* 227) [PluginV2]
+name is (Unnamed Layer* 230) [PluginV2]
+name is (Unnamed Layer* 233) [PluginV2]
+name is (Unnamed Layer* 236) [PluginV2]
+name is (Unnamed Layer* 239) [PluginV2]
+name is (Unnamed Layer* 250) [PluginV2]
+name is (Unnamed Layer* 253) [PluginV2]
+name is (Unnamed Layer* 256) [PluginV2]
+name is (Unnamed Layer* 259) [PluginV2]
+name is (Unnamed Layer* 262) [PluginV2]
+name is (Unnamed Layer* 265) [PluginV2]
+name is (Unnamed Layer* 268) [PluginV2]
+name is (Unnamed Layer* 271) [PluginV2]
+name is (Unnamed Layer* 282) [PluginV2]
+name is (Unnamed Layer* 285) [PluginV2]
+name is (Unnamed Layer* 288) [PluginV2]
+name is (Unnamed Layer* 291) [PluginV2]
+name is (Unnamed Layer* 294) [PluginV2]
+name is (Unnamed Layer* 297) [PluginV2]
+name is (Unnamed Layer* 300) [PluginV2]
+name is (Unnamed Layer* 303) [PluginV2]
+name is (Unnamed Layer* 314) [PluginV2]
+name is (Unnamed Layer* 317) [PluginV2]
+name is (Unnamed Layer* 320) [PluginV2]
+name is (Unnamed Layer* 323) [PluginV2]
+name is (Unnamed Layer* 326) [PluginV2]
+name is (Unnamed Layer* 329) [PluginV2]
+name is (Unnamed Layer* 332) [PluginV2]
+name is (Unnamed Layer* 335) [PluginV2]
+-----3---42
+-----4---42
+engine & 0x5568f7271a50for precision:
+((768, 1536),)
+loading annotations into memory...
+Done (t=0.22s)
+creating index...
+index created!
+********** int8_768_1536_S.npz
+
+*-* test int8_768_1536_S.npz now! *-*
+
+Evaluating model...
+Loading and preparing results...
+DONE (t=0.33s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=14.51s).
+Accumulating evaluation results...
+DONE (t=1.13s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.53146
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.78903
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.56721
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.35705
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.60035
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.71481
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.19332
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.56435
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.64801
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.47844
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.71617
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.82247
+896_896
+Loading engine...
+-----1---42
+-----2---42
+name is (Unnamed Layer* 186) [PluginV2]
+name is (Unnamed Layer* 189) [PluginV2]
+name is (Unnamed Layer* 192) [PluginV2]
+name is (Unnamed Layer* 195) [PluginV2]
+name is (Unnamed Layer* 198) [PluginV2]
+name is (Unnamed Layer* 201) [PluginV2]
+name is (Unnamed Layer* 204) [PluginV2]
+name is (Unnamed Layer* 207) [PluginV2]
+name is (Unnamed Layer* 218) [PluginV2]
+name is (Unnamed Layer* 221) [PluginV2]
+name is (Unnamed Layer* 224) [PluginV2]
+name is (Unnamed Layer* 227) [PluginV2]
+name is (Unnamed Layer* 230) [PluginV2]
+name is (Unnamed Layer* 233) [PluginV2]
+name is (Unnamed Layer* 236) [PluginV2]
+name is (Unnamed Layer* 239) [PluginV2]
+name is (Unnamed Layer* 250) [PluginV2]
+name is (Unnamed Layer* 253) [PluginV2]
+name is (Unnamed Layer* 256) [PluginV2]
+name is (Unnamed Layer* 259) [PluginV2]
+name is (Unnamed Layer* 262) [PluginV2]
+name is (Unnamed Layer* 265) [PluginV2]
+name is (Unnamed Layer* 268) [PluginV2]
+name is (Unnamed Layer* 271) [PluginV2]
+name is (Unnamed Layer* 282) [PluginV2]
+name is (Unnamed Layer* 285) [PluginV2]
+name is (Unnamed Layer* 288) [PluginV2]
+name is (Unnamed Layer* 291) [PluginV2]
+name is (Unnamed Layer* 294) [PluginV2]
+name is (Unnamed Layer* 297) [PluginV2]
+name is (Unnamed Layer* 300) [PluginV2]
+name is (Unnamed Layer* 303) [PluginV2]
+name is (Unnamed Layer* 314) [PluginV2]
+name is (Unnamed Layer* 317) [PluginV2]
+name is (Unnamed Layer* 320) [PluginV2]
+name is (Unnamed Layer* 323) [PluginV2]
+name is (Unnamed Layer* 326) [PluginV2]
+name is (Unnamed Layer* 329) [PluginV2]
+name is (Unnamed Layer* 332) [PluginV2]
+name is (Unnamed Layer* 335) [PluginV2]
+-----3---42
+-----4---42
+896,896;896,896
+Running inference...
+Took 21.0411 ms per inference.
+for eclipse:
+kernel: /home/user/project/run_retina/build/libinfer_test.so fcos_int8_896_896.plan
+(1, 3, 512, 640) float32
+here
+for precision:
+((896, 896),)
+loading annotations into memory...
+Done (t=0.22s)
+creating index...
+index created!
+********** int8_896_896_S.npz
+kernel: /home/user/project/run_retina/build/libinfer_2.so
+init: b'/home/user/project/run_retina/weights/fcos_int8_896_896.plan'
+[896, 896, 8, 100, 0, 0, 0, 0, 0, 0]
+b'/home/user/project/run_retina/weights/fcos_int8_896_896.plan'
+(read: 0.005s) (engine: 0.070s) (infer: 0.081s) , 12.4 im/s
+(read: 0.005s) (engine: 0.063s) (infer: 0.074s) , 13.6 im/s
+(read: 0.005s) (engine: 0.078s) (infer: 0.089s) , 11.2 im/s
+(read: 0.005s) (engine: 0.087s) (infer: 0.098s) , 10.2 im/s
+(read: 0.005s) (engine: 0.073s) (infer: 0.084s) , 11.9 im/s
+(read: 0.005s) (engine: 0.087s) (infer: 0.098s) , 10.2 im/s
+(read: 0.005s) (engine: 0.089s) (infer: 0.100s) , 10.0 im/s
+(read: 0.005s) (engine: 0.075s) (infer: 0.085s) , 11.7 im/s
+(read: 0.005s) (engine: 0.083s) (infer: 0.094s) , 10.7 im/s
+(read: 0.005s) (engine: 0.070s) (infer: 0.080s) , 12.5 im/s
+(read: 0.005s) (engine: 0.075s) (infer: 0.085s) , 11.7 im/s
+(read: 0.005s) (engine: 0.078s) (infer: 0.089s) , 11.3 im/s
+(read: 0.005s) (engine: 0.079s) (infer: 0.090s) , 11.1 im/s
+(read: 0.005s) (engine: 0.077s) (infer: 0.087s) , 11.5 im/s
+(read: 0.005s) (engine: 0.081s) (infer: 0.092s) , 10.9 im/s
+(read: 0.005s) (engine: 0.079s) (infer: 0.090s) , 11.1 im/s
+(read: 0.005s) (engine: 0.090s) (infer: 0.100s) , 10.0 im/s
+(read: 0.005s) (engine: 0.084s) (infer: 0.095s) , 10.5 im/s
+(read: 0.005s) (engine: 0.080s) (infer: 0.091s) , 11.0 im/s
+(read: 0.005s) (engine: 0.079s) (infer: 0.090s) , 11.2 im/s
+(read: 0.005s) (engine: 0.076s) (infer: 0.086s) , 11.6 im/s
+(read: 0.005s) (engine: 0.115s) (infer: 0.126s) , 8.0 im/s
+(read: 0.005s) (engine: 0.076s) (infer: 0.087s) , 11.5 im/s
+(read: 0.005s) (engine: 0.088s) (infer: 0.099s) , 10.1 im/s
+(read: 0.005s) (engine: 0.090s) (infer: 0.100s) , 10.0 im/s
+(read: 0.005s) (engine: 0.090s) (infer: 0.101s) , 9.9 im/s
+(read: 0.005s) (engine: 0.090s) (infer: 0.101s) , 9.9 im/s
+(read: 0.005s) (engine: 0.091s) (infer: 0.101s) , 9.9 im/s
+(read: 0.005s) (engine: 0.092s) (infer: 0.102s) , 9.8 im/s
+(read: 0.005s) (engine: 0.092s) (infer: 0.103s) , 9.7 im/s
+(read: 0.005s) (engine: 0.093s) (infer: 0.104s) , 9.6 im/s
+(read: 0.005s) (engine: 0.093s) (infer: 0.104s) , 9.7 im/s
+(read: 0.005s) (engine: 0.092s) (infer: 0.103s) , 9.7 im/s
+(read: 0.005s) (engine: 0.092s) (infer: 0.103s) , 9.7 im/s
+(read: 0.005s) (engine: 0.093s) (infer: 0.103s) , 9.7 im/s
+(read: 0.005s) (engine: 0.092s) (infer: 0.103s) , 9.7 im/s
+(read: 0.005s) (engine: 0.092s) (infer: 0.103s) , 9.7 im/s
+(read: 0.005s) (engine: 0.092s) (infer: 0.103s) , 9.7 im/s
+(read: 0.005s) (engine: 0.093s) (infer: 0.103s) , 9.7 im/s
+(read: 0.005s) (engine: 0.092s) (infer: 0.103s) , 9.7 im/s
+(read: 0.005s) (engine: 0.092s) (infer: 0.103s) , 9.7 im/s
+(read: 0.005s) (engine: 0.092s) (infer: 0.103s) , 9.7 im/s
+(read: 0.005s) (engine: 0.092s) (infer: 0.103s) , 9.7 im/s
+(read: 0.005s) (engine: 0.091s) (infer: 0.102s) , 9.8 im/s
+(read: 0.005s) (engine: 0.091s) (infer: 0.102s) , 9.8 im/s
+(read: 0.005s) (engine: 0.090s) (infer: 0.101s) , 9.9 im/s
+(read: 0.005s) (engine: 0.090s) (infer: 0.100s) , 10.0 im/s
+********** int8_896_896_S **********
+-----1---42
+-----2---42
+name is (Unnamed Layer* 186) [PluginV2]
+name is (Unnamed Layer* 189) [PluginV2]
+name is (Unnamed Layer* 192) [PluginV2]
+name is (Unnamed Layer* 195) [PluginV2]
+name is (Unnamed Layer* 198) [PluginV2]
+name is (Unnamed Layer* 201) [PluginV2]
+name is (Unnamed Layer* 204) [PluginV2]
+name is (Unnamed Layer* 207) [PluginV2]
+name is (Unnamed Layer* 218) [PluginV2]
+name is (Unnamed Layer* 221) [PluginV2]
+name is (Unnamed Layer* 224) [PluginV2]
+name is (Unnamed Layer* 227) [PluginV2]
+name is (Unnamed Layer* 230) [PluginV2]
+name is (Unnamed Layer* 233) [PluginV2]
+name is (Unnamed Layer* 236) [PluginV2]
+name is (Unnamed Layer* 239) [PluginV2]
+name is (Unnamed Layer* 250) [PluginV2]
+name is (Unnamed Layer* 253) [PluginV2]
+name is (Unnamed Layer* 256) [PluginV2]
+name is (Unnamed Layer* 259) [PluginV2]
+name is (Unnamed Layer* 262) [PluginV2]
+name is (Unnamed Layer* 265) [PluginV2]
+name is (Unnamed Layer* 268) [PluginV2]
+name is (Unnamed Layer* 271) [PluginV2]
+name is (Unnamed Layer* 282) [PluginV2]
+name is (Unnamed Layer* 285) [PluginV2]
+name is (Unnamed Layer* 288) [PluginV2]
+name is (Unnamed Layer* 291) [PluginV2]
+name is (Unnamed Layer* 294) [PluginV2]
+name is (Unnamed Layer* 297) [PluginV2]
+name is (Unnamed Layer* 300) [PluginV2]
+name is (Unnamed Layer* 303) [PluginV2]
+name is (Unnamed Layer* 314) [PluginV2]
+name is (Unnamed Layer* 317) [PluginV2]
+name is (Unnamed Layer* 320) [PluginV2]
+name is (Unnamed Layer* 323) [PluginV2]
+name is (Unnamed Layer* 326) [PluginV2]
+name is (Unnamed Layer* 329) [PluginV2]
+name is (Unnamed Layer* 332) [PluginV2]
+name is (Unnamed Layer* 335) [PluginV2]
+-----3---42
+-----4---42
+engine & 0x560c15e6aa00for precision:
+((896, 896),)
+loading annotations into memory...
+Done (t=0.21s)
+creating index...
+index created!
+********** int8_896_896_S.npz
+
+*-* test int8_896_896_S.npz now! *-*
+
+Evaluating model...
+Loading and preparing results...
+DONE (t=0.31s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=14.26s).
+Accumulating evaluation results...
+DONE (t=1.06s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.51947
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.78237
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.55404
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.33141
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.59238
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.71664
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.19148
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.55435
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.63429
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.45012
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.71279
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.81810
+896_1792
+Loading engine...
+-----1---42
+-----2---42
+name is (Unnamed Layer* 186) [PluginV2]
+name is (Unnamed Layer* 189) [PluginV2]
+name is (Unnamed Layer* 192) [PluginV2]
+name is (Unnamed Layer* 195) [PluginV2]
+name is (Unnamed Layer* 198) [PluginV2]
+name is (Unnamed Layer* 201) [PluginV2]
+name is (Unnamed Layer* 204) [PluginV2]
+name is (Unnamed Layer* 207) [PluginV2]
+name is (Unnamed Layer* 218) [PluginV2]
+name is (Unnamed Layer* 221) [PluginV2]
+name is (Unnamed Layer* 224) [PluginV2]
+name is (Unnamed Layer* 227) [PluginV2]
+name is (Unnamed Layer* 230) [PluginV2]
+name is (Unnamed Layer* 233) [PluginV2]
+name is (Unnamed Layer* 236) [PluginV2]
+name is (Unnamed Layer* 239) [PluginV2]
+name is (Unnamed Layer* 250) [PluginV2]
+name is (Unnamed Layer* 253) [PluginV2]
+name is (Unnamed Layer* 256) [PluginV2]
+name is (Unnamed Layer* 259) [PluginV2]
+name is (Unnamed Layer* 262) [PluginV2]
+name is (Unnamed Layer* 265) [PluginV2]
+name is (Unnamed Layer* 268) [PluginV2]
+name is (Unnamed Layer* 271) [PluginV2]
+name is (Unnamed Layer* 282) [PluginV2]
+name is (Unnamed Layer* 285) [PluginV2]
+name is (Unnamed Layer* 288) [PluginV2]
+name is (Unnamed Layer* 291) [PluginV2]
+name is (Unnamed Layer* 294) [PluginV2]
+name is (Unnamed Layer* 297) [PluginV2]
+name is (Unnamed Layer* 300) [PluginV2]
+name is (Unnamed Layer* 303) [PluginV2]
+name is (Unnamed Layer* 314) [PluginV2]
+name is (Unnamed Layer* 317) [PluginV2]
+name is (Unnamed Layer* 320) [PluginV2]
+name is (Unnamed Layer* 323) [PluginV2]
+name is (Unnamed Layer* 326) [PluginV2]
+name is (Unnamed Layer* 329) [PluginV2]
+name is (Unnamed Layer* 332) [PluginV2]
+name is (Unnamed Layer* 335) [PluginV2]
+-----3---42
+-----4---42
+1792,896;896,1792
+Running inference...
+Took 36.5368 ms per inference.
+for eclipse:
+kernel: /home/user/project/run_retina/build/libinfer_test.so fcos_int8_896_1792.plan
+(1, 3, 512, 640) float32
+here
+for precision:
+((896, 1792),)
+loading annotations into memory...
+Done (t=0.22s)
+creating index...
+index created!
+********** int8_896_1792_S.npz
+kernel: /home/user/project/run_retina/build/libinfer_2.so
+init: b'/home/user/project/run_retina/weights/fcos_int8_896_1792.plan'
+[896, 1792, 8, 100, 0, 0, 0, 0, 0, 0]
+b'/home/user/project/run_retina/weights/fcos_int8_896_1792.plan'
+(read: 0.007s) (engine: 0.167s) (infer: 0.182s) , 5.5 im/s
+(read: 0.006s) (engine: 0.158s) (infer: 0.175s) , 5.7 im/s
+(read: 0.006s) (engine: 0.123s) (infer: 0.139s) , 7.2 im/s
+(read: 0.005s) (engine: 0.154s) (infer: 0.171s) , 5.8 im/s
+(read: 0.006s) (engine: 0.154s) (infer: 0.171s) , 5.9 im/s
+(read: 0.006s) (engine: 0.155s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.155s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.152s) (infer: 0.169s) , 5.9 im/s
+(read: 0.006s) (engine: 0.155s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.156s) (infer: 0.173s) , 5.8 im/s
+(read: 0.006s) (engine: 0.155s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.157s) (infer: 0.174s) , 5.7 im/s
+(read: 0.006s) (engine: 0.155s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.154s) (infer: 0.171s) , 5.9 im/s
+(read: 0.005s) (engine: 0.153s) (infer: 0.170s) , 5.9 im/s
+(read: 0.006s) (engine: 0.156s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.154s) (infer: 0.171s) , 5.9 im/s
+(read: 0.006s) (engine: 0.155s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.154s) (infer: 0.171s) , 5.8 im/s
+(read: 0.006s) (engine: 0.157s) (infer: 0.174s) , 5.7 im/s
+(read: 0.006s) (engine: 0.154s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.157s) (infer: 0.174s) , 5.7 im/s
+(read: 0.006s) (engine: 0.152s) (infer: 0.169s) , 5.9 im/s
+(read: 0.006s) (engine: 0.154s) (infer: 0.171s) , 5.9 im/s
+(read: 0.006s) (engine: 0.155s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.157s) (infer: 0.175s) , 5.7 im/s
+(read: 0.006s) (engine: 0.153s) (infer: 0.170s) , 5.9 im/s
+(read: 0.006s) (engine: 0.156s) (infer: 0.173s) , 5.8 im/s
+(read: 0.006s) (engine: 0.155s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.156s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.154s) (infer: 0.171s) , 5.9 im/s
+(read: 0.005s) (engine: 0.155s) (infer: 0.171s) , 5.8 im/s
+(read: 0.005s) (engine: 0.157s) (infer: 0.173s) , 5.8 im/s
+(read: 0.005s) (engine: 0.156s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.155s) (infer: 0.171s) , 5.8 im/s
+(read: 0.006s) (engine: 0.150s) (infer: 0.166s) , 6.0 im/s
+(read: 0.006s) (engine: 0.153s) (infer: 0.170s) , 5.9 im/s
+(read: 0.006s) (engine: 0.155s) (infer: 0.171s) , 5.8 im/s
+(read: 0.006s) (engine: 0.155s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.152s) (infer: 0.169s) , 5.9 im/s
+(read: 0.006s) (engine: 0.154s) (infer: 0.171s) , 5.9 im/s
+(read: 0.006s) (engine: 0.155s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.155s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.156s) (infer: 0.173s) , 5.8 im/s
+(read: 0.006s) (engine: 0.155s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.155s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.155s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.155s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.155s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.154s) (infer: 0.171s) , 5.9 im/s
+(read: 0.006s) (engine: 0.156s) (infer: 0.173s) , 5.8 im/s
+(read: 0.006s) (engine: 0.151s) (infer: 0.168s) , 6.0 im/s
+(read: 0.006s) (engine: 0.157s) (infer: 0.174s) , 5.8 im/s
+(read: 0.005s) (engine: 0.156s) (infer: 0.173s) , 5.8 im/s
+(read: 0.006s) (engine: 0.157s) (infer: 0.174s) , 5.8 im/s
+(read: 0.006s) (engine: 0.156s) (infer: 0.173s) , 5.8 im/s
+(read: 0.006s) (engine: 0.157s) (infer: 0.174s) , 5.8 im/s
+(read: 0.005s) (engine: 0.155s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.156s) (infer: 0.173s) , 5.8 im/s
+(read: 0.005s) (engine: 0.154s) (infer: 0.171s) , 5.9 im/s
+(read: 0.006s) (engine: 0.155s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.154s) (infer: 0.171s) , 5.9 im/s
+(read: 0.006s) (engine: 0.154s) (infer: 0.171s) , 5.8 im/s
+(read: 0.006s) (engine: 0.156s) (infer: 0.173s) , 5.8 im/s
+(read: 0.006s) (engine: 0.156s) (infer: 0.173s) , 5.8 im/s
+(read: 0.006s) (engine: 0.153s) (infer: 0.170s) , 5.9 im/s
+(read: 0.006s) (engine: 0.155s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.156s) (infer: 0.173s) , 5.8 im/s
+(read: 0.006s) (engine: 0.151s) (infer: 0.168s) , 5.9 im/s
+(read: 0.005s) (engine: 0.155s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.155s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.155s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.156s) (infer: 0.173s) , 5.8 im/s
+(read: 0.006s) (engine: 0.153s) (infer: 0.170s) , 5.9 im/s
+(read: 0.006s) (engine: 0.154s) (infer: 0.171s) , 5.9 im/s
+(read: 0.006s) (engine: 0.154s) (infer: 0.171s) , 5.8 im/s
+(read: 0.006s) (engine: 0.155s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.155s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.157s) (infer: 0.174s) , 5.8 im/s
+(read: 0.006s) (engine: 0.156s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.155s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.156s) (infer: 0.172s) , 5.8 im/s
+(read: 0.006s) (engine: 0.158s) (infer: 0.175s) , 5.7 im/s
+(read: 0.006s) (engine: 0.168s) (infer: 0.186s) , 5.4 im/s
+(read: 0.006s) (engine: 0.168s) (infer: 0.185s) , 5.4 im/s
+********** int8_896_1792_S **********
+-----1---42
+-----2---42
+name is (Unnamed Layer* 186) [PluginV2]
+name is (Unnamed Layer* 189) [PluginV2]
+name is (Unnamed Layer* 192) [PluginV2]
+name is (Unnamed Layer* 195) [PluginV2]
+name is (Unnamed Layer* 198) [PluginV2]
+name is (Unnamed Layer* 201) [PluginV2]
+name is (Unnamed Layer* 204) [PluginV2]
+name is (Unnamed Layer* 207) [PluginV2]
+name is (Unnamed Layer* 218) [PluginV2]
+name is (Unnamed Layer* 221) [PluginV2]
+name is (Unnamed Layer* 224) [PluginV2]
+name is (Unnamed Layer* 227) [PluginV2]
+name is (Unnamed Layer* 230) [PluginV2]
+name is (Unnamed Layer* 233) [PluginV2]
+name is (Unnamed Layer* 236) [PluginV2]
+name is (Unnamed Layer* 239) [PluginV2]
+name is (Unnamed Layer* 250) [PluginV2]
+name is (Unnamed Layer* 253) [PluginV2]
+name is (Unnamed Layer* 256) [PluginV2]
+name is (Unnamed Layer* 259) [PluginV2]
+name is (Unnamed Layer* 262) [PluginV2]
+name is (Unnamed Layer* 265) [PluginV2]
+name is (Unnamed Layer* 268) [PluginV2]
+name is (Unnamed Layer* 271) [PluginV2]
+name is (Unnamed Layer* 282) [PluginV2]
+name is (Unnamed Layer* 285) [PluginV2]
+name is (Unnamed Layer* 288) [PluginV2]
+name is (Unnamed Layer* 291) [PluginV2]
+name is (Unnamed Layer* 294) [PluginV2]
+name is (Unnamed Layer* 297) [PluginV2]
+name is (Unnamed Layer* 300) [PluginV2]
+name is (Unnamed Layer* 303) [PluginV2]
+name is (Unnamed Layer* 314) [PluginV2]
+name is (Unnamed Layer* 317) [PluginV2]
+name is (Unnamed Layer* 320) [PluginV2]
+name is (Unnamed Layer* 323) [PluginV2]
+name is (Unnamed Layer* 326) [PluginV2]
+name is (Unnamed Layer* 329) [PluginV2]
+name is (Unnamed Layer* 332) [PluginV2]
+name is (Unnamed Layer* 335) [PluginV2]
+-----3---42
+-----4---42
+engine & 0x55e3d75edae0for precision:
+((896, 1792),)
+loading annotations into memory...
+Done (t=0.22s)
+creating index...
+index created!
+********** int8_896_1792_S.npz
+
+*-* test int8_896_1792_S.npz now! *-*
+
+Evaluating model...
+Loading and preparing results...
+DONE (t=0.33s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=14.52s).
+Accumulating evaluation results...
+DONE (t=1.20s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.53981
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.79663
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.57738
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.37841
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.60978
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.70676
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.19287
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.56899
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.65739
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.50197
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.72138
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.81533
