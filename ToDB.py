@@ -5,10 +5,11 @@ import time
 from PIL import Image
 import numpy as np
 import io
-import cv2
+import cv2, os
 import paho.mqtt.client as mqtt
 
 
+# ffmpeg 推流：https://blog.csdn.net/Mind_programmonkey/article/details/102732555
 class connectDB():
     def __init__(self):
         self.client = mqtt.Client()
@@ -20,10 +21,12 @@ class connectDB():
         print(image_id)
         value0['media_id'] = media_id  # (media_id % 500)
         value0['media_mac'] = media_mac
-        print(1, '+' * 10)
-        img = Image.fromarray(image)
-        img.save('test.png')
-        with open('test.png', "rb") as image_file:
+        # print(1, '+' * 10)
+        img = Image.fromarray(image[..., ::-1].copy())
+        pth = os.path.join(os.getcwd(), 'test_%d.jpg' % (image_id % 10))
+        # print('=============PIL save path: ', pth)
+        img.save(pth)
+        with open(pth, "rb") as image_file:
             encoded_image = base64.b64encode(image_file.read()).decode()
         value0['picfile'] = encoded_image
         value0['image_id'] = image_id

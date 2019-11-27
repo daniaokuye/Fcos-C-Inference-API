@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 for w in 640 768 896
 do
 for s in 1 2

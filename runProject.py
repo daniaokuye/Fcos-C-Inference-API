@@ -2,6 +2,8 @@ import cv2
 import os, sys
 import subprocess
 
+os.environ.update({'DISPLAY': ':0.0'})
+
 
 class Fisheye():
     def __init__(self):
@@ -20,15 +22,16 @@ class Fisheye():
         print(media_id, media_mac, media_rtsp)
         self.build_yaml(media_id)
         os.system("echo $DISPLAY")
-        self.runlog = 'run_%d.log' % media_id
-        cmd = self.pwd + "/infer_ --ipt %s --opt a --media_id %d --mac %s --yaml %s >run_%d.log 2>&1" % \
-              (media_rtsp, media_id, media_mac, self.yaml, media_id)
+        self.runlog = self.pwd + '/run_%d.log' % media_id
+        cmd = self.pwd + "/infer_ --ipt %s --opt a --media_id %d --mac %s --yaml %s >%s 2>&1 &" % \
+              (media_rtsp, media_id, media_mac, self.yaml, self.runlog)
         print(cmd)
         subprocess.call(cmd, shell=True)
         return True
 
     def stop(self, media_id, **kwargs):
         print("stop")
+        self.runlog = self.pwd + '/run_%d.log' % media_id
         self.build_yaml(media_id, status='y')
         self._del()
         return True
@@ -49,6 +52,9 @@ class Fisheye():
         print('delete temp files')
         os.system("rm %s" % self.yaml)
         os.system("rm %s" % self.runlog)
+        pth = os.path.join(os.getcwd(), 'test_%d.jpg')
+        for i in range(10):
+            os.system("rm %s" % (pth % i))
 
 
 if __name__ == '__main__':
@@ -58,7 +64,8 @@ if __name__ == '__main__':
     # print('md:', md, 'status:', status)
     # print(status)
     if status == 's':  # start
-        # fe.start(md, "00-02-D1-83-83-71", 'rtsp://root:admin123@172.16.105.86:554/live.sdp')
+        fe.start(md, "00-02-D1-83-83-71", 'rtsp://root:admin123@172.16.105.86:554/live.sdp')
+    if status == 'd':  # start
         fe.start(md, "00-02-D1-83-83-71", './build/s.mp4')
     elif status == 'e':  # end
         fe.stop(md)
