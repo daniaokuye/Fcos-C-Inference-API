@@ -95,8 +95,11 @@ private:
     int _maxBatches;
     Dims _inputDims;
 
-    vector<float> _mean{102.9801, 115.9465, 122.7717};
-    vector<float> _std{1.0, 1.0, 1.0};
+    //vector<float> _mean{102.9801, 115.9465, 122.7717};
+    //vector<float> _std{1.0, 1.0, 1.0};
+    vector<float> _mean{103.52, 116.28, 123.675};
+    vector<float> _std{57.375, 57.12, 58.395};
+
     vector<float> _batch;
 
 };

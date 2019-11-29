@@ -10,14 +10,15 @@ import os
 import logging
 # import json
 import numpy as np
-import copy
+import copy, random
 import cv2, time
+import requests
 
-sys.path.insert(0, os.getcwd() + "/../")
+# sys.path.insert(0, os.getcwd() + "/../")
 cfg_file = os.path.join(os.path.split(__file__)[0], 'face_analysis_config.yaml')
-from py_extension.config import cfg_priv, merge_priv_cfg_from_file
-from py_extension.fishEye_lib import FishEye
-from py_extension.colormap import colormap
+from config import cfg_priv, merge_priv_cfg_from_file
+from fishEye_lib import FishEye
+from colormap import colormap
 
 # print('-' * 10, cfg_file)
 merge_priv_cfg_from_file(cfg_file)
@@ -417,6 +418,7 @@ class FaceCounts(object):
             self.out_info['list_box'].append(track['boxes'])
             self.out_info['list_id'].append(track['draw_id'])
             self.out_info['list_color'].append(color)
+
             # for j in range(len(new_track)):
             #     if cfg_priv.OTHER.DRAW_TRACK:
             #         cv2.circle(img_draw, (new_track[j][0], new_track[j][1]), 1, color, 0)
@@ -459,6 +461,20 @@ class FaceCounts(object):
     # def return_info(self):
     #     return self.FaceLib.single_img_info_dict
 
+    def send(self):
+        innum = random.choice([1, 2, 0])
+        outnum = random.choice([1, 2, 0])
+        passnum = random.choice([1, 2, 3, 4, 5, 6])
+        content = {'media_id': 1, 'media_mac': "00-02-D1-83-83-6E", "count_area_id": 1, "count_area_type": 1,
+                   "in_num": innum, "out_num": outnum, "pass_num": passnum, "event_time": int(time.time())}
+        # json_data = json.dumps(content)
+        # print(json_data)
+        resp = requests.post(url='http://172.16.104.247:5000/flow/pvcount', data=content)
+        print(resp.status_code)
+        pth = os.path.join(os.getcwd(), 'num111.log')
+        with open(pth, 'a')as f:
+            f.writelines(str(content))
+
     def return_count(self):
         return self.in_num, self.out_num, self.pass_num, self.ratio
 
@@ -494,22 +510,32 @@ class FaceCounts(object):
             print("error occur:", e, '*' * 10, single_img_info_dict, '*' * 10)
         if cfg_priv.OTHER.COUNT_DRAW:
             self.draw_num()
+        try:
+            print("*" * 10)
+            self.send()
+        except Exception as e:
+            pth = os.path.join(os.getcwd(), 'num222.log')
+            with open(pth, 'w')as f:
+                f.writelines(str(rect))
+            print("*" * 10)
         return self.out_info
 
 
 if __name__ == '__main__':
-    npz = '../build/xxx_%d00.npz'
-    n = 2
-    while True:
-        if not os.path.exists(npz % n) or n >= 10:
-            break
-        print(npz % n)
-        data = np.load(npz % n)
-        n += 2
-        data.allow_pickle = True
-        scores, classes, boxes = data['s'], data['c'], data['b']
-        fc = FaceCounts()
-        i = 0
-        for s, c, b in zip(scores, classes, boxes):
-            res = fc(s, b, c, 1.5, 1.6, 1920, 2880)
-            print('*', end='')
+    pwd = os.path.dirname(os.path.realpath(__file__)) + '/..'
+    print('pwd:', pwd)
+    # npz = '../build/xxx_%d00.npz'
+    # n = 2
+    # while True:
+    #     if not os.path.exists(npz % n) or n >= 10:
+    #         break
+    #     print(npz % n)
+    #     data = np.load(npz % n)
+    #     n += 2
+    #     data.allow_pickle = True
+    #     scores, classes, boxes = data['s'], data['c'], data['b']
+    #     fc = FaceCounts()
+    #     i = 0
+    #     for s, c, b in zip(scores, classes, boxes):
+    #         res = fc(s, b, c, 1.5, 1.6, 1920, 2880)
+    #         print('*', end='')

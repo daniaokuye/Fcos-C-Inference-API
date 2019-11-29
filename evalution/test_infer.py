@@ -58,10 +58,10 @@ def old_shedule():
 
 
 def test_simple_infer(m_param):
-    name = b"/home/user/project/run_retina/weights/fcos_int8_%d_%d.plan" % m_param
+    name = b"/home/user/project/run_retina/weights/fcos_int8_A_%d_%d.plan" % m_param
     caliFile = "/home/user/project/run_retina/weights/calibration_files.txt"
     kernel = '/home/user/project/run_retina/build/libinfer_test.so'
-    print('kernel:', kernel, "fcos_int8_%d_%d.plan" % m_param)
+    print('kernel:', kernel, name)
     lib = ctypes.cdll.LoadLibrary(kernel)
     # a = np.load('/home/user/weight/xxx.npz')
     # if not a.allow_pickle: a.allow_pickle = True
@@ -73,7 +73,10 @@ def test_simple_infer(m_param):
     img = np.hstack([img, img, img])
     img, ratio = get_blob(img, *m_param)
     img = img.astype(np.float32)
-    img = img - np.array([102.9801, 115.9465, 122.7717], dtype=np.float32)
+    # img = img - np.array([102.9801, 115.9465, 122.7717], dtype=np.float32)
+    # img = img / np.array([102.9801, 115.9465, 122.7717], dtype=np.float32)
+    img = img - np.array([103.52, 116.28, 123.675], dtype=np.float32)
+    img = img / np.array([57.375, 57.12, 58.395], dtype=np.float32)
     img = img[np.newaxis]
     x = img.transpose(0, 3, 1, 2)
 
@@ -112,4 +115,4 @@ def get_calibration_files(calibration_images, batch=8, calibration_batches=10):
 
 if __name__ == '__main__':
     # get_calibration_files('/home1/datasets/coco/images/val2017')
-    test_simple_infer((640, 1280))
+    test_simple_infer((896, 1792))

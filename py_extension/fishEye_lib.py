@@ -1,7 +1,7 @@
 import sys
 import os
 
-sys.path.append(os.getcwd() + "/../")
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../")
 # from torch_extension.pre_count.core.config import cfg_priv
 # from torch_extension.pre_count.core.config import merge_priv_cfg_from_file
 
@@ -11,8 +11,8 @@ sys.path.append(os.getcwd() + "/../")
 import time
 import cv2
 import numpy as np
-from py_extension.ut import Profiler
-from py_extension.airport_untities import npbbox_iou
+from ut import Profiler
+from airport_untities import npbbox_iou
 from fh_tracking.fhtracker import HFtracker
 
 
