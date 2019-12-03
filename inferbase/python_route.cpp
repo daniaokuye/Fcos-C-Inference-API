@@ -17,7 +17,7 @@
 #include <vector>
 #include <numpy/arrayobject.h>
 #include <opencv2/opencv.hpp>
-
+#include "base64.h"
 size_t init() {
     import_array();
 }
@@ -41,6 +41,8 @@ python_route::python_route(float ratio_h, float ratio_w, int H, int W) {
     Py_Initialize();
     PyRun_SimpleString("import sys");
     PyRun_SimpleString("sys.path.append(\"/home/user/project/run_retina/py_extension\")");
+//    PyRun_SimpleString("sys.path.append(\"/srv/fisheye_prj/AI_Server/utils/py_extension\")");
+
     init();
     LoadModel(ratio_h, ratio_w, H, W);
 }
@@ -203,14 +205,24 @@ void python_route::SendDB(cv::Mat dst, int media_id, int frame_id, const char *m
     cv::Size ResImgSiz = cv::Size(dst.cols * 0.4, dst.rows * 0.4);
     cv::Mat ResImg = cv::Mat(ResImgSiz, dst.type());
     cv::resize(dst, ResImg, ResImgSiz);
-    std::cout<<"row:"<<ResImg.rows<<" col:"<<ResImg.cols<<" c:"<<ResImg.channels()<<std::endl;
-    npy_intp dims_s[] = {ResImg.rows, ResImg.cols, ResImg.channels()};
-    PyObject *sValue = PyArray_SimpleNewFromData(3, dims_s, NPY_UINT8, ResImg.data);
-    PyTuple_SetItem(pArgs, 0, sValue);
+    //std::cout << "row:" << ResImg.rows << " col:" << ResImg.cols << " c:" << ResImg.channels() << std::endl;
+    //1. 使用numpy格式传输数据
+    //npy_intp dims_s[] = {ResImg.rows, ResImg.cols, ResImg.channels()};
+    //PyObject *sValue = PyArray_SimpleNewFromData(3, dims_s, NPY_UINT8, ResImg.data);
+    //PyTuple_SetItem(pArgs, 0, sValue);
+    //1. 使用numpy格式传输数据
+    //-------------------------------------
+    //2. 使用base64传输数据
+    std::vector <uchar> buffer;
+    buffer.resize(static_cast<size_t>(ResImg.rows) * static_cast<size_t>(ResImg.cols));
+    cv::imencode(".jpg", ResImg, buffer);
+    auto *enc_msg = reinterpret_cast<unsigned char *>(buffer.data());
+    std::string encoded = base64_encode(enc_msg, buffer.size());
+    PyTuple_SetItem(pArgs, 0, Py_BuildValue("s", encoded.c_str()));
+    //2. 使用base64传输数据
     PyTuple_SetItem(pArgs, 1, Py_BuildValue("i", media_id));
     PyTuple_SetItem(pArgs, 2, Py_BuildValue("i", frame_id));
     PyTuple_SetItem(pArgs, 3, Py_BuildValue("s", mac));
-
     PyObject *pRetValue = PyObject_CallObject(sendFunc, pArgs);
     if (pRetValue == NULL) {
         PyErr_Print();

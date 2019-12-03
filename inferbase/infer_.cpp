@@ -13,6 +13,8 @@
 #include <gflags/gflags.h>
 #include <thread>
 
+#define sign(x) ( ((x) <0 )? -1 : ((x)> 0) )
+
 DEFINE_string(ipt , "", "input video file name");
 DEFINE_string(opt, "", "output video file name");
 DEFINE_string(mac, "", "Mac Id");
@@ -119,7 +121,7 @@ void Infer_RT::setInfo(T *ptr, const char *input, int device, std::string modes)
     N_b = run_batch * num_det * 4;
     //python interpreter
     pr = new python_route(h_ratio, w_ratio, dewarper->row_out, dewarper->col_out);
-
+    testStar = true;
 }
 
 
@@ -165,19 +167,71 @@ void Infer_RT::process_() {
     std::cout << "kernel infer: " << GetTickCount() - beg << "ms\n";
 }
 
+
+template<typename T>
+int *expand_line(T *input_x, T *input_y, int n_points, int &idx, const int total = 100) {
+    // "perimeter top angle",90.0; perimeter_bottom_angle, 30.0;
+    int one_third_R = 480, step = 60, *points = new int[total * 2];
+    idx = 0;
+    for (int i = 0; i < n_points; i++) {
+        T delta_w = input_x[(i + 1) % n_points] - input_x[i];
+        T delta_h = input_y[(i + 1) % n_points] - input_y[i];
+        //all肯定不为0
+        float all = sqrt((1.0 * pow(delta_h, 2) + 1.0 * pow(delta_w, 2)));
+        //越接近中间线，步长越大
+        float local_s = 1.0 * step * 3 * one_third_R / (abs(2 * one_third_R - input_y[i]) + one_third_R);
+        int N_step = ceil(all / local_s);
+        float sin_ = 1.0 * delta_h / all, cos_ = 1.0 * delta_w / all, local_step = 1.0 * all / N_step;
+        //闭合图形，不保留终点，只保留起始点
+        for (int j = 0; j < N_step; ++j) {
+            int x_ = int((j * local_step) * cos_ + input_x[i]);
+            int y_ = int((j * local_step) * sin_ + input_y[i]);
+            points[idx] = x_;
+            points[total + idx] = y_;
+            ++idx;
+            if (cos_ >= -1e-3 and cos_ <= 1e-3) break;
+        }
+    }
+    return points;
+}
+
+void Infer_RT::cal_src_ploygon(cv::Mat src, cv::Mat dst) {
+    /*点映射回原图点方法*/
+    int input_X[] = {100, 700, 700, 100}, input_Y[] = {200, 200, 900, 900}, nn_points = 4;
+    int n_points = 0, total_N = 100;
+    int *ret = expand_line(input_X, input_Y, nn_points, n_points, total_N);
+
+    int output_x[n_points], output_y[n_points];
+    int *input_x = ret, *input_y = ret + total_N;
+    dewarper->GetInputPolygonFromOutputPolygon(n_points, input_x, input_y, output_x, output_y);
+
+    for (int i = 0; i < n_points; i++) {
+        cv::line(src, cv::Point(output_x[(i + 1) % n_points], output_y[(i + 1) % n_points]),
+                 cv::Point(output_x[i], output_y[i]), cv::Scalar(50, 50, 50), 3);
+        cv::line(dst, cv::Point(input_x[(i + 1) % n_points], input_y[(i + 1) % n_points]),
+                 cv::Point(input_x[i], input_y[i]), cv::Scalar(50, 50, 50), 3);
+    }
+    delete[] ret;
+    cv::imwrite("src.jpg", src);
+    cv::imwrite("dst.jpg", dst);
+}
+
 void Infer_RT::postprocess(int No, int eclipse, int basemap) {
     unsigned long beg = GetTickCount();
     n_post = (n_post + 1) % slots;
     dewarper->currentImg();
     if (basemap != 0)
         dewarper->saveImg(line, true);
-
+//    if (testStar) {
+//        cal_src_ploygon(dewarper->src, dewarper->dst);
+//        testStar = false;
+//    }
     int base = n_post * N_s;
     pr->PythonPost(dewarper->dst, &boxes[base * 4], &scores[base], &classes[base], run_batch, num_det);
     cv::putText(dewarper->dst, "Frame No: " + std::to_string(No) + ". Eclipse: " + std::to_string(eclipse) + "ms.",
-                cv::Point(int(1.2 * width), int(0.1 * height)),
-                cv::FONT_HERSHEY_PLAIN, 3.0, cv::Scalar(255, 245, 250), 2);
-
+                cv::Point(int(1.2 * width), int(0.2 * height)),
+                cv::FONT_HERSHEY_PLAIN, 5.0, cv::Scalar(255, 245, 250), 3);
+    //0。1*H ;3.0->5.0;2->3
     // Write image 1 or 2
     pr->SendDB(dewarper->dst, meida_id, dewarper->current_frame, mac);// 1
 //    dewarper->saveImg(line);// 2

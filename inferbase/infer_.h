@@ -40,6 +40,8 @@ public:
 
     void run();
 
+    void cal_src_ploygon(cv::Mat src, cv::Mat dst);
+
     deWarp *dewarper;
     cv::Mat src;
 //    std::mutex mtx;
@@ -56,6 +58,6 @@ private:
     float h_ratio, w_ratio;
     float *scores, *boxes, *classes;
     python_route *pr;
-    bool stop;
+    bool stop,testStar;
     std::string yaml, line;
 };

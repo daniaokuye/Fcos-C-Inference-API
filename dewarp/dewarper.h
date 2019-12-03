@@ -51,6 +51,9 @@ public:
 
     void lanch();
 
+    void GetInputPolygonFromOutputPolygon(int num_points,
+                                          int *output_x, int *output_y, int *input_x, int *input_y);
+
     void *data;//, *Img
     cv::Mat src, dst;
     int row_out, col_out, current_frame;

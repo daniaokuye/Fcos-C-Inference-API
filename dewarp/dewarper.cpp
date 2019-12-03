@@ -192,7 +192,7 @@ void deWarp::readVideo(const char *input, int device) {
 void deWarp::saveImg(std::string filename, bool savebase) {
     cv::Mat ResImg;
     cv::Size ResImgSiz;
-    if (not save_photo) {
+    if ((!save_photo and !save_video) or save_video) {
         ResImgSiz = cv::Size(col_out * 0.5, row_out * 0.5);
         ResImg = cv::Mat(ResImgSiz, dst.type());
         cv::resize(dst, ResImg, ResImgSiz);
@@ -206,6 +206,7 @@ void deWarp::saveImg(std::string filename, bool savebase) {
     if (save_video) {
         if (!init_) {
             init_ = true;
+            std::cout << ResImgSiz << "**************\n";
             //    writer.open("dete_" + s, fourcc, fps, cv::Size(col_out, row_out));
             writer.open("dete_" + rs + "_.avi", CV_FOURCC('M', 'J', 'P', 'G'), 20, ResImgSiz);
             if (!writer.isOpened()) {
@@ -216,7 +217,10 @@ void deWarp::saveImg(std::string filename, bool savebase) {
         writer.write(ResImg);
     }
     if (savebase or (save_photo and not save_video)) {
-        cv::imwrite(filename, dst);
+        ResImgSiz = cv::Size(col_out * 0.4, row_out * 0.4);
+        ResImg = cv::Mat(ResImgSiz, dst.type());
+        cv::resize(dst, ResImg, ResImgSiz);
+        cv::imwrite(filename, ResImg);
     }
     if (!save_photo and !save_video) {
         if (!init_) {
@@ -295,6 +299,11 @@ void deWarp::lanch() {
     //url: https://stackoverflow.com/questions/11628364/how-to-block-a-thread-and-resume-it
     pthread_t pth;
     pthread_create(&pth, NULL, run, (void *) this);
+}
+
+void deWarp::GetInputPolygonFromOutputPolygon(
+        int num_points, int *output_x, int *output_y, int *input_x, int *input_y) {
+    ((CameraView *) camera)->GetInputPolygonFromOutputPolygon(num_points, output_x, output_y, input_x, input_y);
 }
 
 cv::Size CalculateSize() {

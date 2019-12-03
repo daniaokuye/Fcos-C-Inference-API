@@ -1,104 +1,35 @@
 import sys
 import os
-
-# from torch_extension.pre_count.core.load_default_yaml import load_params
-# from apis.setting_base import *
-# from apis.setting_base_planb import *
-# from apis.face_lib import FaceLib
-# from torch_extension.pre_count.core.config import merge_priv_cfg_from_file
-
-import logging
-# import json
+import json
 import numpy as np
-import copy, random
-import cv2, time
+import copy, time
+import cv2, random
 import requests
 
-# sys.path.insert(0, os.getcwd() + "/../")
-cfg_file = os.path.join(os.path.split(__file__)[0], 'face_analysis_config.yaml')
 from config import cfg_priv, merge_priv_cfg_from_file
 from fishEye_lib import FishEye
 from colormap import colormap
+from ut import find_rect, cross_line
 
-# print('-' * 10, cfg_file)
+cfg_file = os.path.join(os.path.split(__file__)[0], 'face_analysis_config.yaml')
 merge_priv_cfg_from_file(cfg_file)
-# import requests
-# from torch_extension.pre_count.core.imgfunc import *
-# from torch_extension.pre_count.airport import FishEye
-
-'''
-def mkdir(path):
-    if not os.path.exists(path):
-        os.makedirs(path)
-
-
-def save_img2dir(img, file_name, path):
-    mkdir(path)
-    cv2.imencode('.jpg', img)[1].tofile(os.path.join(path, file_name))
-
-
-def get_pad_img(rect, img, ratio=(0.15, 0.45, 0.3, 0.3)):
-    x, y, w, h = rect
-    # pad box to square
-    if w > h:
-        y = y - (w - h) / 2
-    else:
-        x = x - (h - w) / 2
-        w = h
-    img_h, img_w, c = img.shape
-    new_x1_ = int(x - w * ratio[2])
-    new_y1_ = int(y - w * ratio[0])
-    new_x2_ = int(x + w * (1 + ratio[3]))
-    new_y2_ = int(y + w * (1 + ratio[1]))
-    new_x1, padx1 = [new_x1_, 0] if new_x1_ > 0 else [0, -new_x1_]
-    new_y1, pady1 = [new_y1_, 0] if new_y1_ > 0 else [0, -new_y1_]
-    new_x2, padx2 = [new_x2_, 0] if new_x2_ < img_w else [img_w, new_x2_ - img_w]
-    new_y2, pady2 = [new_y2_, 0] if new_y2_ < img_h else [img_h, new_y2_ - img_h]
-    face_img = img[new_y1:new_y2, new_x1:new_x2]
-    face_img = cv2.copyMakeBorder(face_img, pady1, pady2, padx1, padx2, cv2.BORDER_CONSTANT, value=[0, 0, 0])
-    return face_img
-
-
-def get_org_img(img):
-    img_h, img_w, c = img.shape
-    face_img = img[int(img_h * 0.15):int(img_h * 0.65), int(img_h * 0.25):int(img_h * 0.75)]
-    return face_img
-'''
 
 
 class FaceCounts(object):
     def __init__(self):
         super().__init__()
         self.FishEye = FishEye()
-        # files = b"/home/user/weight/int8_%d_%d.plan"
-        # name = b'engine_%d_%d'
-        # self.FishEye.model_0(files % m_param)
-        # self.FaceLib = FaceLib()
-        # self.FaceLib.camera_id = cam_id
-        # format_info = '%(filename)s - %(lineno)s - %(message)s' if cfg_priv.LOG == 'logging.DEBUG' else ''
-        # logging.basicConfig(level=eval(cfg_priv.LOG), format=format_info)
-        # print('cfg file:', cfg_priv.GLOBAL.VISION_PROJECT_ROOT + "/cfgs/face_analysis_config_bak{}.yaml".format(0))
-        # load_params(cam_id)
-
-        # if cfg_priv.OTHER.API_PLAN_A:
-        #     self.thread_a = myThreadA(cam_id, [1080, 1920])
-        #     self.thread_a.setDaemon(True)
-        #     self.thread_a.start()
-        # else:
-        #     self.thread_b = myThreadB(cam_id, [1080, 1920])
-        #     self.thread_b.setDaemon(True)
-        #     self.thread_b.start()
 
         self.width = 1920
-        self.pad = 0  # int(self.width * 0.1) // 2
+        self.pad = 0
         self.tracks = dict()
         self.tracks['up'] = dict()
-        # self.tracks['down'] = dict()
         self.in_num = 0
         self.out_num = 0
         self.pass_num = 0
         self.ratio = 0
-        self.out_info = {'list_track': [], 'list_box': [], 'list_id': []}
+        self.out_info = {'list_track': [], 'list_box': [], 'list_id': [], 'solid': [], 'dotted': []}
+        self.II = 0
         self.curID = 0
         assert cfg_priv.BUSS.COUNT.ENTRANCE_LINE['default'] != "None", \
             "cfg_priv.BUSS.COUNT.ENTRANCE_LINE['default'] != None"
@@ -109,116 +40,136 @@ class FaceCounts(object):
         self.redefine = False
         self.rect = [[0, 0], [1, 1]]
         self.entrance_line = [[2, 2], [4, 4]]
+        self.set_MACetc = False
+        self.content = {'media_id': -1, 'media_mac': "", "count_area_id": -1, "count_area_type": -1,
+                        "in_num": 0, "out_num": 0, "pass_num": 0, "event_time": 0}
+        self.visual_id = 0
 
-    def find_rect(self, points, shape, pad):
-        p_array = np.array(points)
-        x = p_array[:, 0]
-        y = p_array[:, 1]
+    def dummpy(self):
+        '''查看是否更新图框；如有更新'''
+        pth = os.path.dirname(os.path.realpath(__file__)) + 'set.json'
+        if os.path.exists(pth):
+            print('set params is true')
+            self.set_MACetc = True
+            with open(pth, 'r')as f:
+                params = json.load(f)
+            os.system('rm %s' % pth)
+            self.media_id = params['media_id']
+            self.media_mac = params['media_mac']
+            self.media_rtsp = params['media_rtsp']
 
-        xmax, xmin = np.max(x), np.min(x)
-        ymax, ymin = np.max(y), np.min(y)
-        xmin, xmax = xmin, xmax
-        ymin, ymax = ymin, ymax
+            self.shopID = params['BUSS.COUNT.ROI_AREA_ID']
+            self.lineType = params['BUSS.COUNT.ROI_AREA_TYPE']
+            areas = []
+            for t, keys in enumerate(['BUSS.COUNT.ROI_SOLID_LINE_AREA', 'BUSS.COUNT.ROI_DOTEED_LINE_AREA']):
+                Items = []
+                for i, (shopid, Points) in enumerate(params[keys].items()):
+                    if shopid not in self.shopID:
+                        print('%s should equals to the shop IDS %s:' % (str(shopid), str(self.shopID)))
+                        continue
+                    # todo: may change order here: rows, cols
+                    points = np.array([[int(eval(x) * 2.5), int(eval(y * 2.5))] for x, y in Points], dtype=np.int32)
+                    Items.append(points)
+                areas.append(Items)
+            self.areas = list(zip(*areas))
 
-        if xmin < 0:
-            xmin = 0
-        if xmax >= shape[1]:
-            xmax = shape[1]
-        if ymin < 0:
-            ymin = 0
-        if ymax >= shape[0]:
-            ymax = shape[0]
-        rect_out = [[xmin + pad, ymin], [xmax + pad, ymax]]
-        return rect_out
+    def canvas(self):
+        img = np.ones((self.H, self.W, 3), dtype=np.uint8) * 255
+        img[:, :2] = 0
+        img[:, -2:] = 0
+        img[:2, :] = 0
+        img[-2:, :] = 0
+        if self.set_MACetc:
+            for ii, (solid, dotted) in enumerate(self.areas):
+                cur_id = self.shopID[ii]
+                for pi in range(len(solid)):
+                    cv2.line(img, (solid[(pi + 1) % len(solid)][0], solid[(pi + 1) % len(solid)][1]),
+                             (solid[pi][0], solid[pi][1]), (80, 80, 80), 4)
+                for pi in range(len(dotted)):
+                    cv2.line(img, (dotted[(pi + 1) % len(dotted)][0], dotted[(pi + 1) % len(dotted)][1]),
+                             (dotted[pi][0], dotted[pi][1]), (100, 100, 100), 2)
+                cv2.putText(img, "shop-%s" % cur_id, (solid[0][0] + 1, solid[0][1] - 16),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1.5, (80, 80, 80), 2)
+                cv2.putText(img, "shop-%s" % cur_id, (dotted[0][0] + 1, dotted[0][1] - 16),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1.5, (100, 100, 100), 2)
+        cv2.putText(img, "cur id-%d" % self.curID, (int(self.W * 0.6), int(self.H * 0.1)),
+                    cv2.FONT_HERSHEY_SIMPLEX, 3, (80, 80, 80), 2)
+        track = self.out_info['list_track']
+        boxes = self.out_info['list_box']
+        draw_id = self.out_info['list_id']
+        colors = self.out_info['list_color']
+        solid = self.out_info['solid']
+        dotted = self.out_info['dotted']
+        for ii in range(len(track)):
+            points = track[ii]
+            color = colors[ii]
+            cur_id = draw_id[ii]
+            line_s, line_d = solid[ii], dotted[ii]
+            text = False
+            for pi in range(1, len(points)):
+                if abs(points[pi][0] - points[(pi - 1) % len(points)][0]) > self.W // 2: continue
+                cl = color
+                if line_s[pi] != '': cl = (0, 0, 0)
+                if line_d[pi] != '': cl = (50, 50, 50)
+                cv2.line(img, (points[pi - 1][0], points[pi - 1][1]), (points[pi][0], points[pi][1]), cl, 3)
+                text = True
+            if text:
+                cv2.putText(img, "id: %d" % cur_id, (points[0][0] + 1, points[0][1] - 16),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1.5, color, 2)
+        self.II += 1
+        cv2.imwrite('base_demo%d.jpg' % self.II, img)
+        pass
 
-    def find_direct(self, rect):
-        x = int((rect[0][0] + rect[1][0]) / 2)
-        y1 = rect[0][1] + int((rect[1][1] - rect[0][1]) / 4)
-        y2 = rect[1][1] - int((rect[1][1] - rect[0][1]) / 4)
-        direction_out = [[x, y1], [x, y2]]
-        return direction_out
+    def return_count(self):
+        return self.in_num, self.out_num, self.pass_num, self.ratio
 
-    def generalequation(self, first_x, first_y, second_x, second_y):
-        coeff_a = second_y - first_y
-        coeff_b = first_x - second_x
-        coeff_c = second_x * first_y - first_x * second_y
-        return coeff_a, coeff_b, coeff_c
+    def get_line_offset(self, v_line, v_pad):
+        return [[v_line[0][0] + v_pad, v_line[0][1]], [v_line[1][0] + v_pad, v_line[1][1]]]
 
-    def cross_point(self, line1, line2):
-        x1, y1, x2, y2 = line1[0], line1[1], line1[2], line1[3]
-        x3, y3, x4, y4 = line2[0], line2[1], line2[2], line2[3]
-        coeff_a1, coeff_b1, coeff_c1 = self.generalequation(x1, y1, x2, y2)
-        coeff_a2, coeff_b2, coeff_c2 = self.generalequation(x3, y3, x4, y4)
-        m = coeff_a1 * coeff_b2 - coeff_a2 * coeff_b1
-        if m == 0:
-            x = None
-            y = None
-            return [x, y]
-        else:
-            x = (coeff_c2 * coeff_b1 - coeff_c1 * coeff_b2) / m
-            y = (coeff_c1 * coeff_a2 - coeff_c2 * coeff_a1) / m
-        return [int(x), int(y)]
+    def visual_check_intersection(self, aax, aay, bbx, bby, ccx, ccy, ddx, ddy):
+        minx = min([aax, bbx, ccx, ddx]) - 10
+        miny = min([aay, bby, ccy, ddy]) - 10
+        maxx = max([aax, bbx, ccx, ddx]) - 10
+        maxy = max([aay, bby, ccy, ddy]) - 10
+        img = np.ones((maxy - miny + 30, maxx - minx + 30, 3), dtype=np.uint8) * 255
+        img[:, :2] = 0
+        img[:, -2:] = 0
+        img[:2, :] = 0
+        img[-2:, :] = 0
+        cv2.line(img, (int(aax - minx), int(aay - miny)), (int(bbx - minx), int(bby - miny)), (0, 0, 0), 1)
+        cv2.line(img, (int(ccx - minx), int(ccy - miny)), (int(ddx - minx), int(ddy - miny)), (0, 0, 0), 1)
+        self.visual_id += 1
+        cv2.imwrite('vs/check%d.jpg' % self.visual_id, img)
 
-    def _rect_inter_inner(self, x1, x2):
-        n1 = x1.shape[0] - 1
-        n2 = x2.shape[0] - 1
-        X1 = np.c_[x1[:-1], x1[1:]]
-        X2 = np.c_[x2[:-1], x2[1:]]
-        S1 = np.tile(X1.min(axis=1), (n2, 1)).T
-        S2 = np.tile(X2.max(axis=1), (n1, 1))
-        S3 = np.tile(X1.max(axis=1), (n2, 1)).T
-        S4 = np.tile(X2.min(axis=1), (n1, 1))
-        return S1, S2, S3, S4
+    def deter_in_out(self, aax, aay, bbx, bby):
+        status = []
+        if not self.set_MACetc:
+            return status
+        for i, (solid, dotted) in enumerate(self.areas):
+            shop = self.shopID[i]
+            for ii in range(len(solid)):
+                ccx, ccy = solid[ii]
+                ddx, ddy = solid[(ii + 1) % len(solid)]
+                cross = cross_line(aax, aay, bbx, bby, ccx, ccy, ddx, ddy)
+                if cross:
+                    # self.visual_check_intersection(aax, aay, bbx, bby, ccx, ccy, ddx, ddy)
+                    status.append(['s', shop])
 
-    def _rectangle_intersection_(self, x1, y1, x2, y2):
-        S1, S2, S3, S4 = self._rect_inter_inner(x1, x2)
-        S5, S6, S7, S8 = self._rect_inter_inner(y1, y2)
-
-        C1 = np.less_equal(S1, S2)
-        C2 = np.greater_equal(S3, S4)
-        C3 = np.less_equal(S5, S6)
-        C4 = np.greater_equal(S7, S8)
-
-        ii, jj = np.nonzero(C1 & C2 & C3 & C4)
-        return ii, jj
-
-    def intersection(self, x1, y1, x2, y2):
-        ii, jj = self._rectangle_intersection_(x1, y1, x2, y2)
-        n = len(ii)
-
-        dxy1 = np.diff(np.c_[x1, y1], axis=0)
-        dxy2 = np.diff(np.c_[x2, y2], axis=0)
-
-        T = np.zeros((4, n))
-        AA = np.zeros((4, 4, n))
-        AA[0:2, 2, :] = -1
-        AA[2:4, 3, :] = -1
-        AA[0::2, 0, :] = dxy1[ii, :].T
-        AA[1::2, 1, :] = dxy2[jj, :].T
-
-        BB = np.zeros((4, n))
-        BB[0, :] = -x1[ii].ravel()
-        BB[1, :] = -x2[jj].ravel()
-        BB[2, :] = -y1[ii].ravel()
-        BB[3, :] = -y2[jj].ravel()
-
-        for i in range(n):
-            try:
-                T[:, i] = np.linalg.solve(AA[:, :, i], BB[:, i])
-            except:
-                T[:, i] = np.NaN
-
-        in_range = (T[0, :] >= 0) & (T[1, :] >= 0) & (T[0, :] <= 1) & (T[1, :] <= 1)
-
-        xy0 = T[2:, in_range]
-        xy0 = xy0.T
-        return xy0[:, 0], xy0[:, 1]
+            for ii in range(len(dotted)):
+                ccx, ccy = dotted[ii]
+                ddx, ddy = dotted[(ii + 1) % len(dotted)]
+                cross = cross_line(aax, aay, bbx, bby, ccx, ccy, ddx, ddy)
+                if cross:
+                    # self.visual_check_intersection(aax, aay, bbx, bby, ccx, ccy, ddx, ddy)
+                    status.append(['d', shop])
+        return status
 
     def get_tracks(self, img_data, current_id, max_lost_frames=5):
-        # if len(img_data['up']["delete_tracking_id"]):
-        #     print("up", '- ' * 10, img_data['up']["delete_tracking_id"])
-        # if len(img_data['down']["delete_tracking_id"]):
-        #     print('dn', '- ' * 10, img_data['down']["delete_tracking_id"])
+        if self.set_MACetc:
+            self.statics_in = dict.fromkeys(self.shopID, 0)
+            self.statics_out = dict.fromkeys(self.shopID, 0)
+            self.statics_passby = dict.fromkeys(self.shopID, 0)
+        up_and_down_frames = 2
         for person in img_data['up']["annotations"]:
             track_id = person["tracking_id"]
             global_id = person["global_id"]
@@ -229,6 +180,8 @@ class FaceCounts(object):
                 self.tracks['up'][track_id]['boxes'] = box_xywh
                 self.tracks['up'][track_id]['track'].append(position)
                 self.tracks['up'][track_id]['latest_frame'] = current_id
+                self.tracks['up'][track_id]['solid'].append('')
+                self.tracks['up'][track_id]['dotted'].append('')
             else:
                 self.tracks['up'][track_id] = dict()
                 self.tracks['up'][track_id]['boxes'] = box_xywh
@@ -239,6 +192,56 @@ class FaceCounts(object):
                 self.tracks['up'][track_id]['draw'] = True
                 self.tracks['up'][track_id]['start_frame'] = current_id
                 self.tracks['up'][track_id]['latest_frame'] = current_id
+                self.tracks['up'][track_id]['solid'] = ['']
+                self.tracks['up'][track_id]['dotted'] = ['']
+            if len(self.tracks['up'][track_id]['track']) > 1:
+                aax, aay = self.tracks['up'][track_id]['track'][-2]
+                bbx, bby = position
+                # todo: cross line
+                rets = [] if abs(aax - bbx) > self.W // 2 else self.deter_in_out(aax, aay, bbx, bby)
+                for ret in rets:
+                    types, shop = ret
+                    id_record = len(self.tracks['up'][track_id]['solid'])
+                    old_key_S, old_key_D, new_key_S, new_key_D = (-1,) * 4
+                    idx_key_s = '_'.join([str(shop), 's'])
+                    idx_key_d = '_'.join([str(shop), 'd'])
+
+                    if idx_key_s in self.tracks['up'][track_id]:
+                        old_key_S = self.tracks['up'][track_id][idx_key_s]
+                    if idx_key_d in self.tracks['up'][track_id]:
+                        old_key_D = self.tracks['up'][track_id][idx_key_d]
+                    # 如果经过一段时间仍没有消掉mark，或者有更新记录，那么就计入passby；删除实线框记录
+                    if isinstance(old_key_D, float) and (abs(id_record - old_key_D) < 20 or types != ''):
+                        self.statics_passby[shop] += 1
+                        self.tracks['up'][track_id][idx_key_d] = int(self.tracks['up'][track_id][idx_key_d])
+                        self.tracks['up'][track_id][idx_key_s] = -1
+
+                    if types == 's':
+                        self.tracks['up'][track_id]['solid'][-1] = shop
+                        if id_record - old_key_S < up_and_down_frames and id_record >= 2: old_key_S = id_record
+                        self.tracks['up'][track_id][idx_key_s] = id_record
+                        new_key_S = id_record
+                    if types == 'd':
+                        self.tracks['up'][track_id]['dotted'][-1] = shop
+                        if id_record - old_key_D < up_and_down_frames and id_record >= 2: old_key_D = id_record
+                        self.tracks['up'][track_id][idx_key_d] = id_record
+                        new_key_D = id_record
+
+                    # 让new始终作为最新记录
+                    if new_key_S == -1:
+                        old_key_S, new_key_S = new_key_S, old_key_S
+                    if new_key_D == -1:
+                        old_key_D, new_key_D = new_key_D, old_key_D
+                    # 用记录来计数
+                    door_status = self._count(old_key_S, old_key_D, new_key_S, new_key_D, shop, self.lineType[shop])
+                    # 成功计数一次之后，就需要更新记录了
+                    if door_status == 'passby':  # 留意虚线框
+                        self.tracks['up'][track_id][idx_key_d] += 0.5
+                    if door_status == 'in':  # 删除实线框记录
+                        self.tracks['up'][track_id][idx_key_s] = -1
+                    if door_status == 'out':  # 删除虚线框记录
+                        v = -0.5 if isinstance(old_key_D, float) else -1
+                        self.tracks['up'][track_id][idx_key_d] = v
 
         for track_id in self.tracks['up'].keys():
             if current_id - self.tracks['up'][track_id]['latest_frame'] > max_lost_frames:
@@ -248,34 +251,32 @@ class FaceCounts(object):
                 #     print()
                 self.tracks['up'][track_id]['status'] = False
 
-    def clear_all(self):
-        self.in_num = 0
-        self.out_num = 0
-        self.pass_num = 0
-        self.ratio = 0
-
     def smart_judge(self, key, track_id):
         # can a stop point of a line being a start point of another line?
+        # 拼接断点相近，且位置相近的实例
         dead_id = self.tracks[key][track_id]
         up_and_down_frames = 2
 
-        for instance in self.tracks[key].values():
+        for cur_key, instance in self.tracks[key].items():
+            if cur_key == track_id: continue
             if 0 <= instance['start_frame'] - dead_id['latest_frame'] < 2 * up_and_down_frames:
                 if not (len(instance['track']) or len(dead_id['track'])): continue
                 dis = np.array(instance['track'][0]) - np.array(dead_id['track'][-1])
                 if np.sum(np.abs(dis) < 10) == 2:
                     # connect them
                     dead_id['track'].extend(instance['track'])
+                    dead_id['solid'].extend(instance['solid'])
+                    dead_id['dotted'].extend(instance['dotted'])
                     instance['track'] = dead_id['track']
+                    instance['solid'] = dead_id['solid']
+                    instance['dotted'] = dead_id['dotted']
                     instance['start_frame'] = dead_id['start_frame']
                     self.tracks[key].pop(track_id)
                     return True
         return False
 
-    def count_num(self, rect_area, entra_line):
+    def count_num(self):
         tracks_tmp_up = copy.deepcopy(self.tracks['up'])
-        # tracks_tmp_down = copy.deepcopy(self.tracks['down'])
-
         track_ids = tracks_tmp_up.keys()
         pop_ids = []
         for track_id in track_ids:
@@ -290,121 +291,43 @@ class FaceCounts(object):
                 if cfg_priv.OTHER.COUNT_DRAW:
                     if len(self.tracks['up'][track_id]['track']) > 0 and occur:
                         self.draw_track(self.tracks['up'][track_id])
-                # todo:does not work
-                # if len(self.tracks['up'][track_id]['track']) > 10:
-                #     in_tmp, out_tmp, pass_tmp = self.deter_in_out(self.tracks['up'][track_id]['track'], rect_area,
-                #                                                   entra_line)
-                #     self.in_num += in_tmp
-                #     self.out_num += out_tmp
-                #     self.pass_num += pass_tmp
-                #     if self.pass_num == 0:
-                #         self.ratio = 0
-                #     else:
-                #         self.ratio = self.in_num * 1.0 / self.pass_num * 100
                 pop_ids.append(track_id)
         for track_id in pop_ids:
             self.tracks['up'].pop(track_id)
 
-    def is_in_area(self, point, area):
-        flag = cv2.pointPolygonTest(area, point, False)
-        if flag == 1:
-            return True
-        else:
-            return False
-
-    def transfer_np(self, points):
-        np_points = np.array(points)
-        x_points = np_points[:, 0]
-        y_points = np_points[:, 1]
-        return x_points, y_points
-
-    def cross_entra_line(self, v_track, v_entra_line):
-        x_track, y_track = self.transfer_np(v_track)
-        x_entra_line, y_entra_line = self.transfer_np(v_entra_line)
-        ret_x, ret_y = self.intersection(x_entra_line, y_entra_line, x_track, y_track)
-        if len(ret_x) > 0:
-            return True
-        return False
-
-    def deter_in_out_new(self, track, v_rect, entra_line):
-        rect_area = np.array([[v_rect[0][0], v_rect[0][1]], [v_rect[1][0], v_rect[0][1]], [v_rect[1][0], v_rect[1][1]],
-                              [v_rect[0][0], v_rect[1][1]]])
-        out = []
-        for t in track:
-            out.append(self.is_in_area(t, rect_area))
-        # todo:check multi line have a location not far away
-        out = np.array(out)
-        if np.sum(out) / len(out) > 0.5:
-            is_pass = 1
-
-    def deter_in_out(self, track, v_rect, entra_line):
-        start_point = tuple(track[0])
-        end_point = tuple(track[-1])
-        rect_area = np.array([[v_rect[0][0], v_rect[0][1]], [v_rect[1][0], v_rect[0][1]], [v_rect[1][0], v_rect[1][1]],
-                              [v_rect[0][0], v_rect[1][1]]])
-
-        s_flag = self.is_in_area(start_point, rect_area)
-        e_flag = self.is_in_area(end_point, rect_area)
-        # print("strat:", s_flag)
-        # print("strat:", s_flag)
-
-        if s_flag is True and e_flag is False:
-            if self.cross_entra_line(track, entra_line):
-                # print("logging: in")
-                return 1, 0, 1
-
-        if s_flag is False and e_flag is True:
-            if self.cross_entra_line(track, entra_line):
-                # print("logging: out")
-                return 0, 1, 0
-
-        if s_flag is False and e_flag is False:
-            # print("logging: non")
-            return 0, 0, 0
-
-        if s_flag is True and e_flag is True:
-            # print("logging: pass")
-            return 0, 0, 1
-
-        return 0, 0, 0
+    def _count(self, old_key_S, old_key_D, new_key_S, new_key_D, shop, lineType):
+        '''注意：passby比较麻烦，因为经过两次实现框，且短时间内不经过虚线
+        注意2：一旦计数成功，需要清空旧数据，以防虚假判断'''
+        # if old_key_S > 0 or new_key_S > 0 or old_key_D > 0 or new_key_D > 0:
+        #     print()
+        if old_key_S > 0 and new_key_S > 0 and old_key_D <= 0 and new_key_D <= 0:
+            return 'passby'  # mark and fcous on dot line
+        if lineType == 1:  # 可以不用考虑经过两次实线框，或两次虚线框。why，经过了实线框，又经过虚线框，肯定是经过了进门线
+            if new_key_S > 0 and new_key_D > 0 and new_key_D >= new_key_S:
+                self.statics_in[shop] += 1
+                return 'in'
+            if new_key_D > 0 and new_key_S > 0 and new_key_D < new_key_S:
+                self.statics_out[shop] += 1
+                return 'out'
+        if lineType == 2:
+            if new_key_D > 0 and new_key_S > 0 and new_key_D >= new_key_S:
+                self.statics_in[shop] += 1
+                return 'in'
+            if new_key_D > 0 and new_key_S > 0 and new_key_D < new_key_S:
+                self.statics_out[shop] += 1
+                return 'out'
+        return ''
 
     def draw_scope(self, rec, entrance_line):
         self.out_info['rec'] = rec
         self.out_info['entrance_line'] = entrance_line
-        # if cfg_priv.OTHER.DRAW_ROI:
-        #     cv2.rectangle(image, (rec[0][0], rec[0][1]), (rec[1][0], rec[1][1]),
-        #                   (18, 127, 15), thickness=5)
-        # # if cfg_priv.OTHER.DRAW_DIRECTION:
-        # #     cv2.arrowedLine(image['up'], (direct[0][0], direct[0][1]), (direct[1][0], direct[1][1]), (255, 227, 218),
-        # #                     thickness=5,
-        # #                     shift=0, tipLength=0.2)
-        #
-        # if entrance_line == "None" or entrance_line is None:
-        #     pass
-        # else:
-        #     if cfg_priv.OTHER.DRAW_ENTRA_LINE:
-        #         cv2.line(image, (entrance_line[0][0], entrance_line[0][1]),
-        #                  (entrance_line[1][0], entrance_line[1][1]),
-        #                  (145, 255, 222), 5)
-        # # return image
 
     def draw_num(self):
         self.out_info['pass_by'] = self.pass_num
         self.out_info['entran'] = self.in_num
         self.out_info['ratio'] = round(self.ratio, 2)
-        # if self.pass_num != 0:round(self.ratio, 2)
-        #     chinese_str_list = ["过店人次: " + str(self.pass_num), "进店人次: " + str(self.in_num),
-        #                         "进店率: " + str(round(self.ratio, 2)) + "%"]
-        # else:
-        #     chinese_str_list = ["过店人次: " + str(self.pass_num), "进店人次: " + str(self.in_num),
-        #                         "进店率: --"]
-        # image = vis_inout_result(image, chinese_str_list)
-        #
-        # return image
 
     def draw_track(self, track):
-        # H, W  =  shape
-        # id = track['draw_id']
         color_map = colormap()
         color = int(color_map[track['draw_id'] % 79][0]), int(color_map[track['draw_id'] % 79][1]), int(
             color_map[track['draw_id'] % 79][2])
@@ -412,130 +335,98 @@ class FaceCounts(object):
         if track['draw']:
             if cfg_priv.OTHER.COUNT_DRAW_LESS:
                 new_track = track['track'][-cfg_priv.OTHER.DRAW_TRACK_NUM:]
+                solid = track['solid'][-cfg_priv.OTHER.DRAW_TRACK_NUM:]
+                dotted = track['dotted'][-cfg_priv.OTHER.DRAW_TRACK_NUM:]
             else:
                 new_track = track['track']
+                solid = track['solid']
+                dotted = track['dotted']
+            self.out_info['solid'].append(solid)
+            self.out_info['dotted'].append(dotted)
             self.out_info['list_track'].append(new_track)
             self.out_info['list_box'].append(track['boxes'])
             self.out_info['list_id'].append(track['draw_id'])
             self.out_info['list_color'].append(color)
 
-            # for j in range(len(new_track)):
-            #     if cfg_priv.OTHER.DRAW_TRACK:
-            #         cv2.circle(img_draw, (new_track[j][0], new_track[j][1]), 1, color, 0)
-            #     if cfg_priv.OTHER.DRAW_HEAD:
-            #         if j == len(new_track) - 1:
-            #             cv2.rectangle(img_draw, (track['boxes'][0], track['boxes'][1]),
-            #                           (track['boxes'][0] + track['boxes'][2],
-            #                            track['boxes'][1] + track['boxes'][3]),
-            #                           color, thickness=style)
-            #             cv2.putText(img_draw, str(id), (int(track['boxes'][0]) + 6, int(track['boxes'][1]) + 6),
-            #                         cv2.FONT_HERSHEY_SIMPLEX, max(1.0, style * 0.4), color,
-            #                         max(1, int(style * 0.6)))
-            #
-            #     if cfg_priv.OTHER.DRAW_TRACK:
-            #         if j != 0:
-            #             # if (new_track[j][1] < H // 2) != (new_track[j - 1][1] < H // 2): continue
-            #             if abs(new_track[j][0] - new_track[j - 1][0]) > W // 2: continue
-            #             cv2.line(img_draw, (new_track[j - 1][0], new_track[j - 1][1]),
-            #                      (new_track[j][0], new_track[j][1]), color, thickness=style)
-            # else:
-            #     for j in range(len(track['track'])):
-            #         if cfg_priv.OTHER.DRAW_TRACK:
-            #             cv2.circle(img_draw, (track['track'][j][0], track['track'][j][1]), 1, color, 0)
-            #         if cfg_priv.OTHER.DRAW_HEAD:
-            #             if j == len(track['track']) - 1:
-            #                 cv2.rectangle(img_draw, (track['boxes'][0], track['boxes'][1]),
-            #                               (
-            #                                   track['boxes'][0] + track['boxes'][2],
-            #                                   track['boxes'][1] + track['boxes'][3]),
-            #                               color, thickness=5)
-            #                 cv2.putText(img_draw, str(id), (track['boxes'][0] + 6, track['boxes'][1] + 6),
-            #                             cv2.FONT_HERSHEY_SIMPLEX, 2.0, color, 3)
-            #         if cfg_priv.OTHER.DRAW_TRACK:
-            #             if j != 0:
-            #                 if (track['track'][j][1] < H // 2) != (track['track'][j - 1][1] < H // 2): continue
-            #                 cv2.line(img_draw, (track['track'][j - 1][0], track['track'][j - 1][1]),
-            #                          (track['track'][j][0], track['track'][j][1]), color, thickness=5)
-        # return img_draw
-
-    # def return_info(self):
-    #     return self.FaceLib.single_img_info_dict
-
     def send(self):
-        innum = random.choice([1, 2, 0])
-        outnum = random.choice([1, 2, 0])
-        passnum = random.choice([1, 2, 3, 4, 5, 6])
-        content = {'media_id': 1, 'media_mac': "00-02-D1-83-83-6E", "count_area_id": 1, "count_area_type": 1,
-                   "in_num": innum, "out_num": outnum, "pass_num": passnum, "event_time": int(time.time())}
-        # json_data = json.dumps(content)
-        # print(json_data)
-        resp = requests.post(url='http://172.16.104.247:5000/flow/pvcount', data=content)
-        print(resp.status_code)
-        pth = os.path.join(os.getcwd(), 'num111.log')
-        with open(pth, 'a')as f:
-            f.writelines(str(content))
+        def oneItem(content):
+            resp = requests.post(url='http://172.16.104.247:5000/flow/pvcount', data=content)
+            # if content["in_num"] or content['out_num'] or content['pass_num']:
+            #     self.canvas()
+            #     print(content)
+            #     pass
 
-    def return_count(self):
-        return self.in_num, self.out_num, self.pass_num, self.ratio
+        if not self.set_MACetc:
+            content = self.content
+            oneItem(content)
+        else:
+            for shop in self.shopID:
+                content = {'media_id': self.media_id, 'media_mac': self.media_mac, "count_area_id": shop,
+                           "count_area_type": self.lineType[shop], "in_num": self.statics_in[shop],
+                           "out_num": self.statics_out[shop], "pass_num": self.statics_passby[shop],
+                           "event_time": int(time.time())}
+                oneItem(content)
 
-    # def strip_pad(self, v_img, v_pad):
-    #     return v_img[:, v_pad:v_pad + self.width]
-
-    def get_line_offset(self, v_line, v_pad):
-        return [[v_line[0][0] + v_pad, v_line[0][1]], [v_line[1][0] + v_pad, v_line[1][1]]]
+    def clear_all(self):
+        self.in_num = 0
+        self.out_num = 0
+        self.pass_num = 0
+        self.ratio = 0
 
     def __call__(self, scores, boxes, classes, ratio_h, ratio_w, H, W):
+        self.H, self.W = H, W
         self.curID += 1
         self.out_info = {'list_track': [], 'list_box': [], 'list_id': [], 'list_color': [],
-                         'entran': 0, 'pass_by': 0, 'ratio': 0}
+                         'entran': 0, 'pass_by': 0, 'ratio': 0, 'solid': [], 'dotted': []}
+
         if self.redefine:
             self.redefine = False
             if cfg_priv.BUSS.COUNT.ROI_AREA['default'] == "None" or cfg_priv.BUSS.COUNT.ROI_AREA[
                 'default'] is None or len(cfg_priv.BUSS.COUNT.ROI_AREA['default']) == 0:
                 rect = ([0 + self.pad, 0], [W + self.pad, H // 2])
             else:
-                rect = self.find_rect(cfg_priv.BUSS.COUNT.ROI_AREA['default'], (H, W), self.pad)
+                rect = find_rect(cfg_priv.BUSS.COUNT.ROI_AREA['default'], (H, W), self.pad)
             entrance_line = self.get_line_offset(cfg_priv.BUSS.COUNT.ENTRANCE_LINE['default'], self.pad)
         else:
             rect, entrance_line = self.rect, self.entrance_line
 
         ##################################
+        self.dummpy()
         single_img_info_dict = self.FishEye(scores, boxes, classes, ratio_h, ratio_w, H, W)
         if cfg_priv.OTHER.COUNT_DRAW:
             self.draw_scope(rect, entrance_line)
-        try:
-            self.get_tracks(single_img_info_dict, self.curID)
-            self.count_num(rect, entrance_line)
-        except Exception as e:
-            print("error occur:", e, '*' * 10, single_img_info_dict, '*' * 10)
+        # try:
+        self.get_tracks(single_img_info_dict, self.curID)
+        self.count_num()
         if cfg_priv.OTHER.COUNT_DRAW:
             self.draw_num()
-        try:
-            print("*" * 10)
-            self.send()
-        except Exception as e:
-            pth = os.path.join(os.getcwd(), 'num222.log')
-            with open(pth, 'w')as f:
-                f.writelines(str(rect))
-            print("*" * 10)
+        self.send()
+        # except Exception as e:
+        #     print("error occur:", e, '*' * 10, single_img_info_dict, '*' * 10)
+        # if self.curID == 478:
+        #     self.canvas()
+        #     print()
         return self.out_info
 
 
 if __name__ == '__main__':
-    pwd = os.path.dirname(os.path.realpath(__file__)) + '/..'
-    print('pwd:', pwd)
-    # npz = '../build/xxx_%d00.npz'
-    # n = 2
-    # while True:
-    #     if not os.path.exists(npz % n) or n >= 10:
-    #         break
-    #     print(npz % n)
-    #     data = np.load(npz % n)
-    #     n += 2
-    #     data.allow_pickle = True
-    #     scores, classes, boxes = data['s'], data['c'], data['b']
-    #     fc = FaceCounts()
-    #     i = 0
-    #     for s, c, b in zip(scores, classes, boxes):
-    #         res = fc(s, b, c, 1.5, 1.6, 1920, 2880)
-    #         print('*', end='')
+    from runProject import test_set
+
+    test_set()
+    npz = '../build/xxx_%d.npz'
+    n = 80
+    fc = FaceCounts()
+    while True:
+        if not os.path.exists(npz % n) or n / 100 >= 10:
+            break
+
+        print(npz % n)
+        data = np.load(npz % n)
+        n += 80
+        data.allow_pickle = True
+        scores, classes, boxes = data['s'], data['c'], data['b']
+        print(fc.set_MACetc)
+        i = 0
+        for s, c, b in zip(scores, classes, boxes):
+            res = fc(s, b, c, 1.5, 1.6, 1920, 2880)
+            # print('*', end='')

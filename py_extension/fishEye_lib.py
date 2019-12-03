@@ -1,21 +1,19 @@
-import sys
-import os
-
-sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../")
-# from torch_extension.pre_count.core.config import cfg_priv
-# from torch_extension.pre_count.core.config import merge_priv_cfg_from_file
-
-# cfg_file = 'torch_extension/face_analysis_config.yaml'
-# print('cfg file:', cfg_file)
-# merge_priv_cfg_from_file(cfg_file)
-import time
-import cv2
+import sys, os
 import numpy as np
 from ut import Profiler
 from airport_untities import npbbox_iou
+
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../")
 from fh_tracking.fhtracker import HFtracker
 
 
+# from torch_extension.pre_count.core.config import cfg_priv
+# from torch_extension.pre_count.core.config import merge_priv_cfg_from_file
+# cfg_file = 'torch_extension/face_analysis_config.yaml'
+# print('cfg file:', cfg_file)
+# merge_priv_cfg_from_file(cfg_file)
+# import time
+# import cv2
 # import argparse
 # from multiprocessing import Process
 # from torch_extension.pre_count.face_lib import FaceLib
@@ -469,8 +467,8 @@ class FishEye(object):
         gt_gap = np.tile(gt_gap, 2).reshape(-1, 1, 4)
         self.batch = batch = 1
         batch_size = c = 3
-        if self.IDs >= 69:
-            print()
+        # if self.IDs >= 69:
+        #     print()
         self.profiler.start('post_')
         # arrange boxes to a line & mapping to a dict
         all_detes_boxes = self.rearrange_box_sp3(scores, boxes, classes, W, H, ratio)
