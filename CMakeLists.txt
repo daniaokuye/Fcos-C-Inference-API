@@ -34,7 +34,6 @@ file(GLOB cudaSources ${CMAKE_CURRENT_SOURCE_DIR}/csrc/cuda/decode.cu
         ${CMAKE_CURRENT_SOURCE_DIR}/csrc/cuda/nms.cu
         ${CMAKE_CURRENT_SOURCE_DIR}/csrc/cuda/groupnorm.cu)
 file(GLOB sources ${CMAKE_CURRENT_SOURCE_DIR}/csrc/engine.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/inferbase/base64.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/csrc/engine_fcos.cpp)
 #file(GLOB sources ${CMAKE_CURRENT_SOURCE_DIR}/csrc/engine.cpp)
 

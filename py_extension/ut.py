@@ -1,4 +1,4 @@
-import time
+import time, os
 import numpy as np
 
 
@@ -41,6 +41,36 @@ class Profiler(object):
     def bump(self, name='main'):
         self.stop(name)
         self.start(name)
+
+
+class recorder(object):
+    def __init__(self, N=100):
+        self.idx = 0
+        self.N = N
+        self.s = []
+        self.c = []
+        self.b = []
+        self.tempfile = ''
+
+    def save(self, score, cls, box):
+        self.s.extend([score.copy()])
+        self.c.extend([cls.copy()])
+        self.b.extend([box.copy()])
+        self.idx += 1
+        self.remove_record()
+        if self.idx % self.N == 0:
+            np.savez('xxx_%d' % self.idx, s=self.s, c=self.c, b=self.b)
+            self.s = []
+            self.c = []
+            self.b = []
+            self.tempfile = ''
+        else:
+            np.savez('xxx_%d' % self.idx, s=self.s, c=self.c, b=self.b)
+            self.tempfile = 'xxx_%d.npz' % self.idx
+
+    def remove_record(self):
+        if self.tempfile:
+            os.system("rm %s" % self.tempfile)
 
 
 def find_rect(points, shape, pad):

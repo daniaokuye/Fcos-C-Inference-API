@@ -252,6 +252,7 @@ void deWarp::process() {
 //    printf("pro3: is %d with %d\n", n_slots, x);
     has_frame = cap.read(src);
     ++current_frame;
+
     for (int i = 0; i < 0; i++) {
         ++current_frame;
         cap.grab();
@@ -301,8 +302,7 @@ void deWarp::lanch() {
     pthread_create(&pth, NULL, run, (void *) this);
 }
 
-void deWarp::GetInputPolygonFromOutputPolygon(
-        int num_points, int *output_x, int *output_y, int *input_x, int *input_y) {
+void deWarp::mappingPolygon(int num_points, int *output_x, int *output_y, int *input_x, int *input_y) {
     ((CameraView *) camera)->GetInputPolygonFromOutputPolygon(num_points, output_x, output_y, input_x, input_y);
 }
 

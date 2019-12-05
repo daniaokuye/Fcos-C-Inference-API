@@ -12,6 +12,7 @@
 #include "python_route.h"
 #include <gflags/gflags.h>
 #include <thread>
+#include <exception>
 
 #define sign(x) ( ((x) <0 )? -1 : ((x)> 0) )
 
@@ -30,6 +31,7 @@ unsigned long GetTickCount() {
 }
 
 bool loadKeyParams(std::string yaml, int &s) {
+//    std::cout << "load----" << std::endl;
     cv::FileStorage fs(yaml, cv::FileStorage::READ);
     if (!fs.isOpened()) {
         fprintf(stderr, "%s:%d:loadParams falied. 'yaml' does not exist\n", __FILE__, __LINE__);
@@ -40,6 +42,7 @@ bool loadKeyParams(std::string yaml, int &s) {
     fs["pic"] >> pic;
     fs.release();
     s = 0;
+//    std::cout << "read p----" << std::endl;
     if (pic == "y") {
         s = 1;
         fs.open(yaml, cv::FileStorage::WRITE);
@@ -145,24 +148,16 @@ void Infer_RT::preprocess() {
 void Infer_RT::process_() {
     n_count = (n_count + 1) % slots;
     unsigned long beg = GetTickCount();
-//    cout << "Running inference..." << endl;
     dewarper->currentStatus();
-    //getsrc();
 
+    //std::cout << "Running inference..." << std::endl;
     vector<void *> buffers = {dewarper->data, scores_d, boxes_d, classes_d};
-//    if (engine != nullptr) {
-//        cout << "|_ Running" << n_count << endl;
     engine->infer(buffers, run_batch);
-//    } else {
-//        cout << "Running inference..." << run_batch << endl;
-////        run_batch=1;
-//        engine->infer(buffers, run_batch);
-//    }
-    //cout << "inference over" << endl;
     // Get back the bounding boxes
     cudaMemcpy(scores + n_count * N_s, scores_d, sizeof(float) * num_det * run_batch, cudaMemcpyDeviceToHost);
     cudaMemcpy(boxes + n_count * N_b, boxes_d, sizeof(float) * num_det * 4 * run_batch, cudaMemcpyDeviceToHost);
     cudaMemcpy(classes + n_count * N_s, classes_d, sizeof(float) * num_det * run_batch, cudaMemcpyDeviceToHost);
+
 
     std::cout << "kernel infer: " << GetTickCount() - beg << "ms\n";
 }
@@ -203,7 +198,7 @@ void Infer_RT::cal_src_ploygon(cv::Mat src, cv::Mat dst) {
 
     int output_x[n_points], output_y[n_points];
     int *input_x = ret, *input_y = ret + total_N;
-    dewarper->GetInputPolygonFromOutputPolygon(n_points, input_x, input_y, output_x, output_y);
+    dewarper->mappingPolygon(n_points, input_x, input_y, output_x, output_y);
 
     for (int i = 0; i < n_points; i++) {
         cv::line(src, cv::Point(output_x[(i + 1) % n_points], output_y[(i + 1) % n_points]),
@@ -220,6 +215,7 @@ void Infer_RT::postprocess(int No, int eclipse, int basemap) {
     unsigned long beg = GetTickCount();
     n_post = (n_post + 1) % slots;
     dewarper->currentImg();
+    //std::cout << "postprocess..." << std::endl;
     if (basemap != 0)
         dewarper->saveImg(line, true);
 //    if (testStar) {
@@ -227,14 +223,15 @@ void Infer_RT::postprocess(int No, int eclipse, int basemap) {
 //        testStar = false;
 //    }
     int base = n_post * N_s;
+
     pr->PythonPost(dewarper->dst, &boxes[base * 4], &scores[base], &classes[base], run_batch, num_det);
     cv::putText(dewarper->dst, "Frame No: " + std::to_string(No) + ". Eclipse: " + std::to_string(eclipse) + "ms.",
                 cv::Point(int(1.2 * width), int(0.2 * height)),
                 cv::FONT_HERSHEY_PLAIN, 5.0, cv::Scalar(255, 245, 250), 3);
     //0。1*H ;3.0->5.0;2->3
-    // Write image 1 or 2
-    pr->SendDB(dewarper->dst, meida_id, dewarper->current_frame, mac);// 1
 //    dewarper->saveImg(line);// 2
+    pr->SendDB(dewarper->dst, meida_id, dewarper->current_frame, mac);// 1
+
     unsigned long end = GetTickCount();
     std::cout << "postProcess: " << end - beg << "ms\n";
 }
@@ -293,15 +290,15 @@ void Infer_RT::run() {
     while (true) {
         t1 = GetTickCount();
         isStop = std::thread([=, &saveImg] { stop = loadKeyParams(yaml, saveImg); });
-        dataPreparation = std::thread(fishes);
-        preprocess();
-        if (i > 0)dataPostparation.join();
+        dataPreparation = std::thread(fishes);//model
+        preprocess();//read img
+        if (i > 0)dataPostparation.join();//python and show img
         dataPreparation.join();
         dataPostparation = std::thread([=] { postprocess(i, int(GetTickCount() - t1), saveImg); });
         isStop.join();
 
-        std::cout << "Frame No.: " << ++i << std::endl;
-        std::cout << std::endl << "----------- " << GetTickCount() - t1 << " ms -------------" << saveImg << std::endl;
+        std::cout << "--- No." << ++i << " & " << GetTickCount() - t1
+                  << " ms ---" << saveImg << std::endl << std::endl;
         if (!dewarper->has_frame or stop)break;
     }
     dataPostparation.join();

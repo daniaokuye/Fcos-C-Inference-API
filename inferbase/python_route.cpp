@@ -17,7 +17,9 @@
 #include <vector>
 #include <numpy/arrayobject.h>
 #include <opencv2/opencv.hpp>
-#include "base64.h"
+//#include "base64.h"
+#include <exception>
+
 size_t init() {
     import_array();
 }
@@ -127,13 +129,13 @@ void python_route::ParseRet(cv::Mat dst, PyObject *pRetValue) {
     npy_intp *shape5 = PyArray_SHAPE(r5);
     npy_intp *shape6 = PyArray_SHAPE(r6);
     npy_intp *shape7 = PyArray_SHAPE(r7);
-    float *base_r1 = (float *) PyArray_DATA(r1);
-    float *base_r2 = (float *) PyArray_DATA(r2);
-    float *base_r3 = (float *) PyArray_DATA(r3);
-    float *base_r4 = (float *) PyArray_DATA(r4);
-    float *base_r5 = (float *) PyArray_DATA(r5);
-    float *base_r6 = (float *) PyArray_DATA(r6);
-    float *base_r7 = (float *) PyArray_DATA(r7);
+    float *base_r1 = (float *) PyArray_DATA(r1);//身份id N
+    float *base_r2 = (float *) PyArray_DATA(r2);//跟踪线 n*2
+    float *base_r3 = (float *) PyArray_DATA(r3);//跟踪数据的长度 N
+    float *base_r4 = (float *) PyArray_DATA(r4);//人体框 N*4
+    float *base_r5 = (float *) PyArray_DATA(r5);//进出路过3个数字 3
+    float *base_r6 = (float *) PyArray_DATA(r6);//进出线框，4*2
+    float *base_r7 = (float *) PyArray_DATA(r7);//颜色对应id，(3*n)
     std::vector<float> ids(base_r1, base_r1 + shape1[0]);
     std::vector<float> track(base_r2, base_r2 + shape2[0] * shape2[1]);
     std::vector<float> track_num(base_r3, base_r3 + shape3[0]);
@@ -170,31 +172,31 @@ void python_route::ParseRet(cv::Mat dst, PyObject *pRetValue) {
 //        std::cout << "c:" << r << ", " << g << ", " << b << ";";
     }
 //    std::cout << std::endl;
-
-    //std::cout << "shape[1]:" << shape1[0] <<
-    //          " shape2:" << shape2[0] << "," << shape2[1] <<
-    //          " shape3:" << shape3[0] <<
-    //          " shape4:" << shape4[0] << "," << shape4[1] <<
-    //          " shape5:" << shape5[0] <<
-    //          " shape6:" << shape6[0] << "," << shape6[1] <<
-    //          std::endl;
-    //std::cout << "ids ";
-    //for (auto c: ids)std::cout << c << ',';
-    //std::cout << std::endl;
-    //std::cout << "track ";
-    //for (auto c: track)std::cout << c << ',';
-    //std::cout << std::endl;
-    //std::cout << "track_num ";
-    //for (auto c: track_num)std::cout << c << ',';
-    //std::cout << std::endl;
-    //std::cout << "box ";
-    //for (auto c: box)std::cout << c << ',';
-    //std::cout << std::endl;
-    //std::cout << "statistic ";
-    //for (auto c: statistic)std::cout << c << ',';
-    //std::cout << std::endl;
-    //std::cout << "support ";
-//    std::cout << "shape[7]:" << shape7[0] << ":" << cw << "\ncolor:\n";
+//
+//    std::cout << "shape[1]:" << shape1[0] <<
+//              " shape2:" << shape2[0] << "," << shape2[1] <<
+//              " shape3:" << shape3[0] <<
+//              " shape4:" << shape4[0] << "," << shape4[1] <<
+//              " shape5:" << shape5[0] <<
+//              " shape6:" << shape6[0] << "," << shape6[1] <<
+//              " shape7:" << shape7[0] <<
+//              std::endl;
+//    std::cout << "ids ";
+//    for (auto c: ids)std::cout << c << ',';
+//    std::cout << std::endl;
+//    std::cout << "track ";
+//    for (auto c: track)std::cout << c << ',';
+//    std::cout << std::endl;
+//    std::cout << "track_num ";
+//    for (auto c: track_num)std::cout << c << ',';
+//    std::cout << std::endl;
+//    std::cout << "box ";
+//    for (auto c: box)std::cout << c << ',';
+//    std::cout << std::endl;
+//    std::cout << "statistic ";
+//    for (auto c: statistic)std::cout << c << ',';
+//    std::cout << std::endl;
+//    std::cout << "color ";
 //    for (auto c: color)std::cout << c << ',';
 //    std::cout << std::endl;
 
@@ -203,7 +205,7 @@ void python_route::ParseRet(cv::Mat dst, PyObject *pRetValue) {
 void python_route::SendDB(cv::Mat dst, int media_id, int frame_id, const char *mac) {
     PyObject *pArgs = PyTuple_New(4);
     cv::Size ResImgSiz = cv::Size(dst.cols * 0.4, dst.rows * 0.4);
-    cv::Mat ResImg = cv::Mat(ResImgSiz, dst.type());
+    cv::Mat ResImg = cv::Mat(ResImgSiz, CV_8UC3);
     cv::resize(dst, ResImg, ResImgSiz);
     //std::cout << "row:" << ResImg.rows << " col:" << ResImg.cols << " c:" << ResImg.channels() << std::endl;
     //1. 使用numpy格式传输数据
@@ -212,17 +214,33 @@ void python_route::SendDB(cv::Mat dst, int media_id, int frame_id, const char *m
     //PyTuple_SetItem(pArgs, 0, sValue);
     //1. 使用numpy格式传输数据
     //-------------------------------------
+
     //2. 使用base64传输数据
     std::vector <uchar> buffer;
     buffer.resize(static_cast<size_t>(ResImg.rows) * static_cast<size_t>(ResImg.cols));
     cv::imencode(".jpg", ResImg, buffer);
+
+//    cv::imwrite("test.jpg", ResImg);
+//    std::cout << "buffer.size:" << buffer.size() << std::endl;
+//    int _len = int(buffer.size());
+//    int length = int(buffer.size() / 3 * 4.2);
+//    char *encoded = new char[length];
+//    std::cout << "buffer.size:" << buffer.size() << " /3:" << length
+//              << " nL:" << _len << std::endl;
+//    base64_encode(enc_msg, buffer.size(), encoded);
+//    char *encoded = reinterpret_cast< char *>(buffer.data());//test 2
+
     auto *enc_msg = reinterpret_cast<unsigned char *>(buffer.data());
-    std::string encoded = base64_encode(enc_msg, buffer.size());
-    PyTuple_SetItem(pArgs, 0, Py_BuildValue("s", encoded.c_str()));
+    npy_intp dims_s[] = {buffer.size(), 1};
+    //https://blog.csdn.net/jacke121/article/details/78536432
+    PyObject *sValue = PyArray_SimpleNewFromData(2, dims_s, NPY_UBYTE, enc_msg);
+    PyTuple_SetItem(pArgs, 0, sValue);
     //2. 使用base64传输数据
+
     PyTuple_SetItem(pArgs, 1, Py_BuildValue("i", media_id));
     PyTuple_SetItem(pArgs, 2, Py_BuildValue("i", frame_id));
     PyTuple_SetItem(pArgs, 3, Py_BuildValue("s", mac));
+
     PyObject *pRetValue = PyObject_CallObject(sendFunc, pArgs);
     if (pRetValue == NULL) {
         PyErr_Print();
@@ -240,6 +258,10 @@ void python_route::PythonInfer(int batch, int row, int col, void *ipt) {
     PyTuple_SetItem(pArgs, 1, Py_BuildValue("i", 2));    /* 图像放大2倍 */
     /* 调用函数 */
     PyObject *pRetValue = PyObject_CallObject(pFunc, pArgs);
+    if (pRetValue == NULL) {
+        PyErr_Print();
+        throw std::invalid_argument("PythonInfer NULL");
+    }
 }
 
 void python_route::RunModel(int row, int col, void *ipt) {
@@ -272,3 +294,4 @@ int pymain(int argc, char *argv[]) {
     pr.RunModel(row, col, sml_img.data);
     return 0;
 }
+
