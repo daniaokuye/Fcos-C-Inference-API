@@ -11,16 +11,14 @@
 #include <GLFW/glfw3.h>
 #include "camera_view.h"
 #include "dewarper.h"
-#include <pthread.h>
+//#include <pthread.h>
 #include <unistd.h>
 #include <future>
 
 std::unordered_map<std::string, CameraView *> CameraViewInstance;
 
-
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;/*初始化互斥锁*/
-pthread_cond_t cond = PTHREAD_COND_INITIALIZER;//init cond
-
+//pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;/*初始化互斥锁*/
+//pthread_cond_t cond = PTHREAD_COND_INITIALIZER;//init cond
 
 DEFINE_string(lens, "vivotek", "camera lens");
 DEFINE_string(mode, "center", "dewarping mode");
@@ -187,6 +185,9 @@ void deWarp::readVideo(const char *input, int device) {
     ((CameraView *) camera)->sp = new splitProcess(col_out, row_out, 3, width, height, slots);
     ratio_w = ((CameraView *) camera)->sp->ratio_width;
     ratio_h = ((CameraView *) camera)->sp->ratio_height;
+    cv::Mat tempM;
+    cap >> tempM;
+    mul_mat.push(tempM);
 }
 
 void deWarp::saveImg(std::string filename, bool savebase) {
@@ -244,13 +245,31 @@ void deWarp::process() {
     n_slots = (n_slots + 1) % slots;
     status[n_slots] = true;
     bool x = status[n_slots];
+    /* 11.read img to queqe异步读取*/
+    readsrc = std::thread([=] {
+        for (int ii = 0; ii < 3; ++ii) {
+            cv::Mat tem;
+            // 读取当前帧： https://www.cnblogs.com/little-monkey/p/7162340.html
+            if (cap.read(tem))
+                mul_mat.push(tem);
+        }
+    });
+
 //    printf("pro: is %d with %d\n", n_slots, x);
     ((CameraView *) camera)->resetOutput(dsts[n_slots].data);
 //    printf("|_ pro2:  is %d  _|\n", n_slots);
     /* 2.run main function*/
     ((CameraView *) camera)->Process();
 //    printf("pro3: is %d with %d\n", n_slots, x);
-    has_frame = cap.read(src);
+//    int chance = 0;
+//    do {// 防止异常引起的流断开
+//        has_frame = cap.read(src);
+//        cv::waitKey(5);//每次延时n毫秒
+//    } while (++chance < 20 and !has_frame);
+    mul_mat.front().copyTo(src);
+    mul_mat.pop();
+    for (int ii = 0; ii < mul_mat.size() / 6; ii++)mul_mat.pop();
+    std::cout << "sz:" << mul_mat.size() << std::endl;
     ++current_frame;
 
     for (int i = 0; i < 0; i++) {
@@ -258,6 +277,8 @@ void deWarp::process() {
         cap.grab();
     }
 
+    readsrc.join();
+    if (mul_mat.empty())has_frame = false;//队列空，则退出程序
 //    dst = dsts[n_slots];/*000000*/
     /* 3. get data for inference*/
 //    data = ((CameraView *) camera)->sp->out_Pixels_dyn;/*000000*/
@@ -290,17 +311,17 @@ void deWarp::currentStatus() {
 //    status[last_slots] = false;
 
 }
-
-void *deWarp::run(void *__this) {
-    deWarp *_this = (deWarp *) __this;
-    _this->process();
-}
-
-void deWarp::lanch() {
-    //url: https://stackoverflow.com/questions/11628364/how-to-block-a-thread-and-resume-it
-    pthread_t pth;
-    pthread_create(&pth, NULL, run, (void *) this);
-}
+//
+//void *deWarp::run(void *__this) {
+//    deWarp *_this = (deWarp *) __this;
+//    _this->process();
+//}
+//
+//void deWarp::lanch() {
+//    //url: https://stackoverflow.com/questions/11628364/how-to-block-a-thread-and-resume-it
+//    pthread_t pth;
+//    pthread_create(&pth, NULL, run, (void *) this);
+//}
 
 void deWarp::mappingPolygon(int num_points, int *output_x, int *output_y, int *input_x, int *input_y) {
     ((CameraView *) camera)->GetInputPolygonFromOutputPolygon(num_points, output_x, output_y, input_x, input_y);

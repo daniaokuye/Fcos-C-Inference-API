@@ -52,7 +52,7 @@ class recorder(object):
         self.b = []
         self.tempfile = ''
 
-    def save(self, score, cls, box):
+    def save(self, score, box, cls):
         self.s.extend([score.copy()])
         self.c.extend([cls.copy()])
         self.b.extend([box.copy()])

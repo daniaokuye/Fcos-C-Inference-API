@@ -150,14 +150,13 @@ void Infer_RT::process_() {
     unsigned long beg = GetTickCount();
     dewarper->currentStatus();
 
-    //std::cout << "Running inference..." << std::endl;
+    std::cout << "Running inference..." << std::endl;
     vector<void *> buffers = {dewarper->data, scores_d, boxes_d, classes_d};
     engine->infer(buffers, run_batch);
     // Get back the bounding boxes
     cudaMemcpy(scores + n_count * N_s, scores_d, sizeof(float) * num_det * run_batch, cudaMemcpyDeviceToHost);
     cudaMemcpy(boxes + n_count * N_b, boxes_d, sizeof(float) * num_det * 4 * run_batch, cudaMemcpyDeviceToHost);
     cudaMemcpy(classes + n_count * N_s, classes_d, sizeof(float) * num_det * run_batch, cudaMemcpyDeviceToHost);
-
 
     std::cout << "kernel infer: " << GetTickCount() - beg << "ms\n";
 }
@@ -215,7 +214,7 @@ void Infer_RT::postprocess(int No, int eclipse, int basemap) {
     unsigned long beg = GetTickCount();
     n_post = (n_post + 1) % slots;
     dewarper->currentImg();
-    //std::cout << "postprocess..." << std::endl;
+    std::cout << "postprocess..." << std::endl;
     if (basemap != 0)
         dewarper->saveImg(line, true);
 //    if (testStar) {

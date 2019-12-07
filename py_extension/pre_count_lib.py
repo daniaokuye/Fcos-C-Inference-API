@@ -106,6 +106,7 @@ class FaceCounts(object):
                             cv2.FONT_HERSHEY_SIMPLEX, 1.5, (100, 100, 100), 2)
         cv2.putText(img, "cur id-%d" % self.curID, (int(self.W * 0.6), int(self.H * 0.1)),
                     cv2.FONT_HERSHEY_SIMPLEX, 3, (80, 80, 80), 2)
+
         track = self.out_info['list_track']
         boxes = self.out_info['list_box']
         draw_id = self.out_info['list_id']
@@ -120,14 +121,16 @@ class FaceCounts(object):
             text = False
             for pi in range(1, len(points)):
                 if abs(points[pi][0] - points[(pi - 1) % len(points)][0]) > self.W // 2: continue
-                cl = color
-                if line_s[pi] != '': cl = (0, 0, 0)
-                if line_d[pi] != '': cl = (50, 50, 50)
+                r_, g_, b_ = cl = color
+                if line_s[pi] != '': cl = (255 - r_, 255 - g_, 255 - b_)
+                if line_d[pi] != '': cl = ((355 - r_) % 200, (355 - r_) % 200, (355 - r_) % 200)
                 cv2.line(img, (points[pi - 1][0], points[pi - 1][1]), (points[pi][0], points[pi][1]), cl, 3)
                 text = True
             if text:
                 cv2.putText(img, "id: %d" % cur_id, (points[0][0] + 1, points[0][1] - 16),
                             cv2.FONT_HERSHEY_SIMPLEX, 1.5, color, 2)
+            cv2.circle(img, (points[- 1][0], points[- 1][1]), 10, color, -1)
+
         self.II += 1
         cv2.imwrite('vs/base_demo%d.jpg' % self.II, img)
 
@@ -384,15 +387,13 @@ class FaceCounts(object):
 
     def send(self):
         def oneItem(content):
+            # requests.post(url='http://172.16.104.247:5000/flow/pvcount', data=content)
             if self.debug:
                 if content["in_num"] or content['out_num'] or content['pass_num']:
                     self.canvas()
-                    print(content)
-            else:
-                requests.post(url='http://172.16.104.247:5000/flow/pvcount', data=content)
+                    print(self.curID, content)
 
         in_num, out_num, pass_num = 0, 0, 0
-
         if not self.set_MACetc:
             content = self.content
             if content["in_num"] or content['out_num'] or content['pass_num']:
@@ -439,7 +440,8 @@ class FaceCounts(object):
                          'rec': [[0, 0], [1, 1]], 'entrance_line': [[2, 2], [4, 4]]}
 
         C_scores, C_boxes, C_classes = scores.copy(), boxes.copy(), classes.copy()
-        status = False
+        status = True
+        # self.debug = False
         try:
             ##################################
             self.dummpy()
@@ -453,15 +455,55 @@ class FaceCounts(object):
             ##################################
         except Exception as e:
             traceback.print_exc(e)
+            # pass
         if self.set_MACetc and self.record and status:
             self.recorder.save(C_scores, C_boxes, C_classes)
         return self.out_info
 
 
+def sendall():
+    p = [
+        {'media_id': 36, 'count_area_id': '1', 'event_time': int(time.time()), 'count_area_type': 1, 'out_num': 1,
+         'in_num': 0, 'media_mac': '00-02-D1-83-83-6E', 'pass_num': 0},
+        {'media_id': 36, 'count_area_id': '1', 'event_time': int(time.time()), 'count_area_type': 1, 'out_num': 0,
+         'in_num': 1, 'media_mac': '00-02-D1-83-83-6E', 'pass_num': 0},
+        {'media_id': 36, 'count_area_id': '1', 'event_time': int(time.time()), 'count_area_type': 1, 'out_num': 0,
+         'in_num': 1, 'media_mac': '00-02-D1-83-83-6E', 'pass_num': 0},
+
+        {'media_id': 36, 'count_area_id': '1', 'event_time': int(time.time()), 'count_area_type': 1, 'out_num': 1,
+         'in_num': 0, 'media_mac': '00-02-D1-83-83-6E', 'pass_num': 0},
+        {'media_id': 36, 'count_area_id': '1', 'event_time': int(time.time()), 'count_area_type': 1, 'out_num': 0,
+         'in_num': 1, 'media_mac': '00-02-D1-83-83-6E', 'pass_num': 0},
+        {'media_id': 36, 'count_area_id': '1', 'event_time': int(time.time()), 'count_area_type': 1, 'out_num': 0,
+         'in_num': 1, 'media_mac': '00-02-D1-83-83-6E', 'pass_num': 0}
+    ]
+    l = len(p)
+    print('oooo')
+    for i in range(100):
+        content = p[i % l]
+        requests.post(url='http://172.16.104.247:5000/flow/pvcount', data=content)
+        print('.', i)
+
+
 if __name__ == '__main__':
     from runProject import test_set
 
-    test_set(False)
+    try:
+        print("cp xxx*")
+        os.system("cp /srv/fisheye_prj/AI_Server/xxx_* /home/user/project/run_retina/build/")
+    except Exception as e:
+        print("cp xxx* error")
+    try:
+        print("cp set.json")
+        os.system("cp /srv/fisheye_prj/AI_Server/utils/py_extension/D_set.json "
+                  "/home/user/project/run_retina/py_extension/set.json")
+    except Exception as e:
+        print("cp set.json")
+    try:
+        os.system("rm /home/user/project/run_retina/py_extension/vs/*")
+    except Exception as e:
+        print("rm debug photo")
+    # test_set(False)
     fc = FaceCounts()
     fc.debug = True
     npz = '../build/xxx_%d.npz'
@@ -473,6 +515,6 @@ if __name__ == '__main__':
         n += N
         data.allow_pickle = True
         scores, classes, boxes = data['s'], data['c'], data['b']
-        print(fc.set_MACetc)
+        # print(fc.set_MACetc)
         for s, c, b in zip(scores, classes, boxes):
             res = fc(s, b, c, 1.5, 1.6, 1920, 2880)

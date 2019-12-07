@@ -9,6 +9,9 @@
 
 #include <iostream>
 #include <opencv2/opencv.hpp>
+#include <queue>
+#include <thread>
+
 //#include <gflags/gflags.h>
 //#include "split.h"
 //#include "camera_view.h"
@@ -47,9 +50,9 @@ public:
 
     void readVideo(const char *input = NULL, int device = -1);
 
-    static void *run(void *);
-
-    void lanch();
+//    static void *run(void *);
+//
+//    void lanch();
 
     void mappingPolygon(int num_points, int *output_x, int *output_y, int *input_x, int *input_y);
 
@@ -74,7 +77,7 @@ private:
     cv::Size srcSize;
     cv::VideoWriter writer;
     bool save_video, save_photo, init_;
-
-
+    std::thread readsrc;
+    std::queue <cv::Mat> mul_mat;
     int extraDst;
 };

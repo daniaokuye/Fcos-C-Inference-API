@@ -90,6 +90,10 @@ void CameraView::resetOutput(unsigned char *output_data) {
     output_buffer.data = output_data;
 }
 
+void CameraView::resetInput(unsigned char *input_data) {
+    input_buffer.data = input_data;
+}
+
 void CameraView::InitGL() {
     glEnable(GL_TEXTURE_2D);
     glGenTextures(1, &tex_id);

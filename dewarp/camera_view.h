@@ -5,6 +5,7 @@
 #include <cuda.h>
 #include <cuda_gl_interop.h>
 #include <vector>
+
 //###########
 //1. cuda & opengl: https://www.cnblogs.com/csuftzzk/p/cuda_opengl_interoperability.html
 //2. OpenGL与CUDA互操作方式总结： https://www.cnblogs.com/csuftzzk/p/cuda_opengl_interoperability.html
@@ -33,6 +34,8 @@ public:
                                           int *output_x, int *output_y, int *input_x, int *input_y);
 
     void resetOutput(unsigned char *output_data);
+
+    void resetInput(unsigned char *input_data);
 
     splitProcess *sp;
     IMV_Buffer input_buffer;
@@ -69,5 +72,4 @@ private:
     // show eclipse
     int ntm;
     std::vector<float> tm;
-
 };

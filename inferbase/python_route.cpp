@@ -42,8 +42,8 @@ python_route::python_route(float ratio_h, float ratio_w, int H, int W) {
     /* 非常重要，折腾的时间主要是因为这儿引起的【1】 */
     Py_Initialize();
     PyRun_SimpleString("import sys");
-    PyRun_SimpleString("sys.path.append(\"/home/user/project/run_retina/py_extension\")");
-//    PyRun_SimpleString("sys.path.append(\"/srv/fisheye_prj/AI_Server/utils/py_extension\")");
+//    PyRun_SimpleString("sys.path.append(\"/home/user/project/run_retina/py_extension\")");
+    PyRun_SimpleString("sys.path.append(\"/srv/fisheye_prj/AI_Server/utils/py_extension\")");
 
     init();
     LoadModel(ratio_h, ratio_w, H, W);
