@@ -19,16 +19,18 @@ public:
 
     void RunModel(int, int, void *);
 
-    void PythonPost(cv::Mat, void *, void *, void *, int, int);
+    void PythonPost(void *, void *, void *, int, int, bool toCanvas,
+                    cv::Mat ResImg, int media_id, int frame_id, const char *mac);
 
-    void ParseRet(cv::Mat, PyObject *);
+    void ParseRet(cv::Mat, float, float);
 
-    void SendDB(cv::Mat, int, int, const char *);
+//    void SendDB(cv::Mat, int, int, const char *);
 
     void PythonInfer(int batch, int row, int col, void *ipt);
 
 private:
-    PyObject *pModule, *pFunc, *postFunc, *sendFunc;
+    PyObject *pModule, *pFunc, *postFunc, *selfPost;//, *sendFunc
+    std::vector <uchar> buffer;
 };
 
 

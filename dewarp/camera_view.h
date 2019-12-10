@@ -37,6 +37,8 @@ public:
 
     void resetInput(unsigned char *input_data);
 
+    void getOutput();
+
     splitProcess *sp;
     IMV_Buffer input_buffer;
     IMV_Buffer output_buffer;

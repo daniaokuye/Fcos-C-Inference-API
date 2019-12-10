@@ -36,7 +36,7 @@ public:
 
     ~deWarp();
 
-    void process();
+    void process(bool cpdst = false);
 
     int test();
 
@@ -46,13 +46,16 @@ public:
 
     void currentImg();
 
-    void saveImg(std::string, bool savebase = false);
+    void saveImg(std::string, cv::Mat ResImg, bool savebase = false);
 
     void readVideo(const char *input = NULL, int device = -1);
 
 //    static void *run(void *);
 //
 //    void lanch();
+    void join_thread();
+
+    void join_dst();
 
     void mappingPolygon(int num_points, int *output_x, int *output_y, int *input_x, int *input_y);
 
@@ -76,8 +79,8 @@ private:
     int rows, cols, slots, n_slots, last_slots, dst_slots;
     cv::Size srcSize;
     cv::VideoWriter writer;
-    bool save_video, save_photo, init_;
-    std::thread readsrc;
+    bool save_video, save_photo, init_, readSwitch;
+    std::thread readsrc, getdst;
     std::queue <cv::Mat> mul_mat;
     int extraDst;
 };

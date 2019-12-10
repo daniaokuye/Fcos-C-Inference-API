@@ -29,6 +29,7 @@ class HFtracker(object):
             # return [], []
         else:
             detection_rects[:, 2:4] -= detection_rects[:, 0:2]
+            detection_rects[:, 2:4] += 1e-5  # in case equal to 0
             detection_rects = list(detection_rects.flatten())
             box_num = len(detection_rects)
             self.lib.tracking_Frame_Hungarian.argtypes = \

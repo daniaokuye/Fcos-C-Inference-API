@@ -17,8 +17,17 @@
 #include <cuda.h>
 #include <cuda_gl_interop.h>
 #include <opencv2/opencv.hpp>
+#include <time.h>
+#include <chrono>
 
 //DEFINE_bool(use_pbo, true, "whether to use PBO for unpacking/packing");
+
+unsigned long GetTickCount() {
+    // https://blog.csdn.net/guang11cheng/article/details/6865992
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+}
 
 CameraView::CameraView(
         int input_width, int input_height, unsigned char *input_data,
@@ -158,30 +167,45 @@ CameraView::~CameraView() {
 }
 
 void CameraView::Process() {
-    std::clock_t beg = std::clock();
+//    std::clock_t beg = std::clock();
+//    unsigned long tbeg = GetTickCount();
+//    auto start = std::chrono::steady_clock::now();
     UnpackToTexture();
-    std::clock_t end = std::clock();
+//    std::clock_t end = std::clock();
+//    unsigned long tend = GetTickCount();
+//    auto stop = std::chrono::steady_clock::now();
+//    auto timing = std::chrono::duration_cast < std::chrono::duration < double >> (stop - start);
 //    tm.push_back(1000.0 * (end - beg) / CLOCKS_PER_SEC);
-//    std::cout << "Unpacking: "
+//    std::cout << "Unpacking: " << tend - tbeg << ',' << timing.count() * 1000.0 << ','
 //              << 1000.0 * (end - beg) / CLOCKS_PER_SEC
 //              << "ms ";
 //    std::cout.flush();
 
-    beg = end;
+//    beg = std::clock();
+//    tbeg = GetTickCount();
+//    start = std::chrono::steady_clock::now();
     RenderScene();
-    end = std::clock();
+//    end = std::clock();
+//    tend = GetTickCount();
+//    stop = std::chrono::steady_clock::now();
+//    timing = std::chrono::duration_cast < std::chrono::duration < double >> (stop - start);
 //    tm.push_back(1000.0 * (end - beg) / CLOCKS_PER_SEC);
-//    std::cout << "Rendering: "
+//    std::cout << "Rendering: " << tend - tbeg << ',' << timing.count() * 1000.0 << ','
 //              << 1000.0 * (end - beg) / CLOCKS_PER_SEC
 //              << "ms ";
 //    std::cout.flush();
 
-    beg = end;
+//    beg = std::clock();
+//    tbeg = GetTickCount();
+//    start = std::chrono::steady_clock::now();
     PackFromFramebuffer();
-    end = std::clock();
+//    end = std::clock();
+//    tend = GetTickCount();
+//    stop = std::chrono::steady_clock::now();
+//    timing = std::chrono::duration_cast < std::chrono::duration < double >> (stop - start);
 //    tm.push_back(1000.0 * (end - beg) / CLOCKS_PER_SEC);
 //    ntm++;
-//    std::cout << "Packing: "
+//    std::cout << "Packing: " << tend - tbeg << ',' << timing.count() * 1000.0 << ','
 //              << 1000.0 * (end - beg) / CLOCKS_PER_SEC
 //              << "ms\n";
 //    std::cout.flush();
@@ -243,10 +267,14 @@ void CameraView::PackFromFramebuffer() {
 //    std::cout << "____>run " << std::endl;
     sp->run();
 //    std::cout << "____>get " << std::endl;
-    sp->get_2p_Img(output_buffer.data);
+//    sp->get_2p_Img(output_buffer.data);#######
     /**/
     cudaGraphicsUnmapResources(1, &resource, NULL);//9.6
 
+}
+
+void CameraView::getOutput() {
+    sp->get_2p_Img(output_buffer.data);
 }
 
 void CameraView::GetInputPointFromOutputPoint(

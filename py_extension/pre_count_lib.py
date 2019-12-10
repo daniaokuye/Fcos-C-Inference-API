@@ -9,7 +9,7 @@ import traceback
 from config import cfg_priv, merge_priv_cfg_from_file
 from fishEye_lib import FishEye
 from colormap import colormap
-from ut import find_rect, cross_line, recorder
+from ut import find_rect, cross_line, recorder, async_call
 
 cfg_file = os.path.join(os.path.split(__file__)[0], 'face_analysis_config.yaml')
 merge_priv_cfg_from_file(cfg_file)
@@ -23,7 +23,6 @@ class FaceCounts(object):
         self.FishEye = FishEye()
 
         self.tracks = dict()
-        self.tracks['up'] = dict()
         # 记录输入数组，以便于debug
         self.recorder = recorder(N)
         # 是否画图，可视化来debug
@@ -32,10 +31,11 @@ class FaceCounts(object):
         self.visual_id = 0  # 可视化是否交叉时，保存用的名字自增名称
         self.curID = 0  # 帧号
         self.set_MACetc = False  # 判断是否有设定mac，进出门店的位置标识线等
-        # 发送的基本信息格式send
-        self.content = {'media_id': -1, 'media_mac': "", "count_area_id": -1, "count_area_type": -1,
-                        "in_num": 0, "out_num": 0, "pass_num": 0, "event_time": 0}
+        self.sendInfoList = []
 
+        # 发送的基本信息格式send
+        # self.content = {'media_id': -1, 'media_mac': "", "count_area_id": -1, "count_area_type": -1,
+        #                 "in_num": 0, "out_num": 0, "pass_num": 0, "event_time": 0}
         # self.width = 1920
         # self.in_num = 0
         # self.out_num = 0
@@ -53,6 +53,11 @@ class FaceCounts(object):
         # self.entrance_line = [[2, 2], [4, 4]]
 
     def dummpy(self):
+        '''发送统计消息'''
+        if len(self.sendInfoList) > 30:
+            for content in self.sendInfoList:
+                self.oneItem(content)
+            self.sendInfoList = []
         '''查看是否更新图框；如有更新'''
         pth = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'set.json')
         if os.path.exists(pth):
@@ -93,16 +98,17 @@ class FaceCounts(object):
         img[-2:, :] = 0
         if self.set_MACetc:
             for ii, (solid, dotted) in enumerate(self.areas):
-                cur_id = self.shopID[ii]
+                shop = self.shopID[ii]
+                cur_id = self.lineType[shop]
                 for pi in range(len(solid)):
                     cv2.line(img, (solid[(pi + 1) % len(solid)][0], solid[(pi + 1) % len(solid)][1]),
                              (solid[pi][0], solid[pi][1]), (80, 80, 80), 4)
                 for pi in range(len(dotted)):
                     cv2.line(img, (dotted[(pi + 1) % len(dotted)][0], dotted[(pi + 1) % len(dotted)][1]),
                              (dotted[pi][0], dotted[pi][1]), (100, 100, 100), 2)
-                cv2.putText(img, "shop-%s" % cur_id, (solid[0][0] + 1, solid[0][1] - 16),
+                cv2.putText(img, "Type-%s" % cur_id, (solid[0][0] + 1, solid[0][1] - 16),
                             cv2.FONT_HERSHEY_SIMPLEX, 1.5, (80, 80, 80), 2)
-                cv2.putText(img, "shop-%s" % cur_id, (dotted[0][0] + 1, dotted[0][1] - 16),
+                cv2.putText(img, "Type-%s" % cur_id, (dotted[0][0] + 1, dotted[0][1] - 16),
                             cv2.FONT_HERSHEY_SIMPLEX, 1.5, (100, 100, 100), 2)
         cv2.putText(img, "cur id-%d" % self.curID, (int(self.W * 0.6), int(self.H * 0.1)),
                     cv2.FONT_HERSHEY_SIMPLEX, 3, (80, 80, 80), 2)
@@ -160,7 +166,7 @@ class FaceCounts(object):
                 ddx, ddy = solid[(ii + 1) % len(solid)]
                 cross = cross_line(aax, aay, bbx, bby, ccx, ccy, ddx, ddy)
                 if cross:
-                    if self.debug: self.visual_check_intersection(aax, aay, bbx, bby, ccx, ccy, ddx, ddy)
+                    # if self.debug: self.visual_check_intersection(aax, aay, bbx, bby, ccx, ccy, ddx, ddy)
                     status.append(['s', shop])
 
             for ii in range(len(dotted)):
@@ -168,7 +174,7 @@ class FaceCounts(object):
                 ddx, ddy = dotted[(ii + 1) % len(dotted)]
                 cross = cross_line(aax, aay, bbx, bby, ccx, ccy, ddx, ddy)
                 if cross:
-                    if self.debug: self.visual_check_intersection(aax, aay, bbx, bby, ccx, ccy, ddx, ddy)
+                    # if self.debug: self.visual_check_intersection(aax, aay, bbx, bby, ccx, ccy, ddx, ddy)
                     status.append(['d', shop])
         return status
 
@@ -184,40 +190,40 @@ class FaceCounts(object):
             box_xywh = person["head_bbox"]
             position = [int(box_xywh[0] + box_xywh[2] / 2), int(box_xywh[1] + box_xywh[3] / 2)]
 
-            if track_id in self.tracks['up']:
-                self.tracks['up'][track_id]['boxes'] = box_xywh
-                self.tracks['up'][track_id]['track'].append(position)
-                self.tracks['up'][track_id]['latest_frame'] = current_id
-                self.tracks['up'][track_id]['solid'].append('')
-                self.tracks['up'][track_id]['dotted'].append('')
+            if track_id in self.tracks:
+                self.tracks[track_id]['boxes'] = box_xywh
+                self.tracks[track_id]['track'].append(position)
+                self.tracks[track_id]['latest_frame'] = current_id
+                self.tracks[track_id]['solid'].append('')
+                self.tracks[track_id]['dotted'].append('')
             else:
-                self.tracks['up'][track_id] = dict()
-                self.tracks['up'][track_id]['boxes'] = box_xywh
-                self.tracks['up'][track_id]['track'] = []
-                self.tracks['up'][track_id]['track'].append(position)
-                self.tracks['up'][track_id]['draw_id'] = global_id
-                self.tracks['up'][track_id]['status'] = True
-                self.tracks['up'][track_id]['draw'] = True
-                self.tracks['up'][track_id]['start_frame'] = current_id
-                self.tracks['up'][track_id]['latest_frame'] = current_id
-                self.tracks['up'][track_id]['solid'] = ['']
-                self.tracks['up'][track_id]['dotted'] = ['']
-            if len(self.tracks['up'][track_id]['track']) > 1:
-                aax, aay = self.tracks['up'][track_id]['track'][-2]
+                self.tracks[track_id] = dict()
+                self.tracks[track_id]['boxes'] = box_xywh
+                self.tracks[track_id]['track'] = []
+                self.tracks[track_id]['track'].append(position)
+                self.tracks[track_id]['draw_id'] = global_id
+                self.tracks[track_id]['status'] = True
+                self.tracks[track_id]['draw'] = True
+                self.tracks[track_id]['start_frame'] = current_id
+                self.tracks[track_id]['latest_frame'] = current_id
+                self.tracks[track_id]['solid'] = ['']
+                self.tracks[track_id]['dotted'] = ['']
+            if len(self.tracks[track_id]['track']) > 1:
+                aax, aay = self.tracks[track_id]['track'][-2]
                 bbx, bby = position
                 # todo: cross line
                 rets = [] if abs(aax - bbx) > self.W // 2 else self.deter_in_out(aax, aay, bbx, bby)
                 for ret in rets:
                     types, shop = ret
-                    id_record = len(self.tracks['up'][track_id]['solid'])
+                    id_record = len(self.tracks[track_id]['solid'])
                     old_key_S, old_key_D, new_key_S, new_key_D = (-1,) * 4
                     idx_key_s = '_'.join([str(shop), 's'])
                     idx_key_d = '_'.join([str(shop), 'd'])
 
-                    if idx_key_s in self.tracks['up'][track_id]:
-                        old_key_S = self.tracks['up'][track_id][idx_key_s]
-                    if idx_key_d in self.tracks['up'][track_id]:
-                        old_key_D = self.tracks['up'][track_id][idx_key_d]
+                    if idx_key_s in self.tracks[track_id]:
+                        old_key_S = self.tracks[track_id][idx_key_s]
+                    if idx_key_d in self.tracks[track_id]:
+                        old_key_D = self.tracks[track_id][idx_key_d]
                     '''计数逻辑：
                     首先，判断是否碰线，碰的什么样的线；
                     其次，分析碰线次序，来判断是出还是进。
@@ -234,18 +240,18 @@ class FaceCounts(object):
                     # 如果经过一段时间仍没有消掉mark，或者有更新记录，那么就计入passby；删除实线框记录
                     if isinstance(old_key_D, float) and (abs(id_record - old_key_D) < 20 or types != ''):
                         self.statics_passby[shop] += 1
-                        self.tracks['up'][track_id][idx_key_d] = int(self.tracks['up'][track_id][idx_key_d])
-                        self.tracks['up'][track_id][idx_key_s] = -1
+                        self.tracks[track_id][idx_key_d] = int(self.tracks[track_id][idx_key_d])
+                        self.tracks[track_id][idx_key_s] = -1
 
                     if types == 's':
-                        self.tracks['up'][track_id]['solid'][-1] = shop
+                        self.tracks[track_id]['solid'][-1] = shop
                         if id_record - old_key_S < up_and_down_frames and id_record >= 2: old_key_S = id_record
-                        self.tracks['up'][track_id][idx_key_s] = id_record
+                        self.tracks[track_id][idx_key_s] = id_record
                         new_key_S = id_record
                     if types == 'd':
-                        self.tracks['up'][track_id]['dotted'][-1] = shop
+                        self.tracks[track_id]['dotted'][-1] = shop
                         if id_record - old_key_D < up_and_down_frames and id_record >= 2: old_key_D = id_record
-                        self.tracks['up'][track_id][idx_key_d] = id_record
+                        self.tracks[track_id][idx_key_d] = id_record
                         new_key_D = id_record
 
                     # 让new始终作为最新记录
@@ -257,25 +263,25 @@ class FaceCounts(object):
                     door_status = self._count(old_key_S, old_key_D, new_key_S, new_key_D, shop, self.lineType[shop])
                     # 成功计数一次之后，就需要更新记录了
                     if door_status == 'passby':  # 留意虚线框
-                        if idx_key_d not in self.tracks['up'][track_id]:
-                            self.tracks['up'][track_id][idx_key_d] = -0.5
+                        if idx_key_d not in self.tracks[track_id]:
+                            self.tracks[track_id][idx_key_d] = -0.5
                         else:
-                            self.tracks['up'][track_id][idx_key_d] += 0.5
+                            self.tracks[track_id][idx_key_d] += 0.5
                     if door_status == 'in':  # 删除实线框记录
-                        self.tracks['up'][track_id][idx_key_s] = -1
+                        self.tracks[track_id][idx_key_s] = -1
                     if door_status == 'out':  # 删除虚线框记录
                         v = -0.5 if isinstance(old_key_D, float) else -1
-                        self.tracks['up'][track_id][idx_key_d] = v
+                        self.tracks[track_id][idx_key_d] = v
 
-        for track_id in self.tracks['up'].keys():
-            if current_id - self.tracks['up'][track_id]['latest_frame'] > max_lost_frames:
+        for track_id in self.tracks.keys():
+            if current_id - self.tracks[track_id]['latest_frame'] > max_lost_frames:
                 img_data['up']["delete_tracking_id"].append(track_id)
             if track_id in img_data['up']["delete_tracking_id"]:
                 # if track_id == 4:
                 #     print()
-                self.tracks['up'][track_id]['status'] = False
+                self.tracks[track_id]['status'] = False
 
-    def smart_judge(self, key, track_id):
+    def smart_judge(self, track_id):
         '''拼接的基本逻辑是断点的判断；
         但是，目前使用的计数逻辑不是可逆向追溯，所以断点重连，对计数没有帮助。
         但是可以想办法，利用区间计算是否构成进出店等；但有多次计数的风险；
@@ -283,10 +289,10 @@ class FaceCounts(object):
         '''
         # can a stop point of a line being a start point of another line?
         # 拼接断点相近，且位置相近的实例
-        dead_id = self.tracks[key][track_id]
+        dead_id = self.tracks[track_id]
         up_and_down_frames = 2
 
-        for cur_key, instance in self.tracks[key].items():
+        for cur_key, instance in self.tracks.items():
             if cur_key == track_id: continue
             if 0 <= instance['start_frame'] - dead_id['latest_frame'] < 2 * up_and_down_frames:
                 if not (len(instance['track']) or len(dead_id['track'])): continue
@@ -300,29 +306,29 @@ class FaceCounts(object):
                     instance['solid'] = dead_id['solid']
                     instance['dotted'] = dead_id['dotted']
                     instance['start_frame'] = dead_id['start_frame']
-                    self.tracks[key].pop(track_id)
+                    self.tracks.pop(track_id)
                     return True
         return False
 
     def count_num(self):
-        tracks_tmp_up = copy.deepcopy(self.tracks['up'])
+        tracks_tmp_up = copy.deepcopy(self.tracks)
         track_ids = tracks_tmp_up.keys()
         pop_ids = []
         for track_id in track_ids:
-            occur = (self.curID == self.tracks['up'][track_id]['latest_frame'])
-            if self.tracks['up'][track_id]['status']:
+            occur = (self.curID == self.tracks[track_id]['latest_frame'])
+            if self.tracks[track_id]['status']:
                 if cfg_priv.OTHER.COUNT_DRAW:
-                    if len(self.tracks['up'][track_id]['track']) > 0 and occur:
-                        self.draw_track(self.tracks['up'][track_id])
+                    if len(self.tracks[track_id]['track']) > 0 and occur:
+                        self.draw_track(self.tracks[track_id])
             else:
-                is_combine = self.smart_judge('up', track_id)
+                is_combine = self.smart_judge(track_id)
                 if is_combine: continue
                 if cfg_priv.OTHER.COUNT_DRAW:
-                    if len(self.tracks['up'][track_id]['track']) > 0 and occur:
-                        self.draw_track(self.tracks['up'][track_id])
+                    if len(self.tracks[track_id]['track']) > 0 and occur:
+                        self.draw_track(self.tracks[track_id])
                 pop_ids.append(track_id)
         for track_id in pop_ids:
-            self.tracks['up'].pop(track_id)
+            self.tracks.pop(track_id)
 
     # 计数逻辑的核心代码
     def _count(self, old_key_S, old_key_D, new_key_S, new_key_D, shop, lineType):
@@ -355,15 +361,6 @@ class FaceCounts(object):
                 self.statics_in[shop] += 1
                 return 'in'
 
-    # def draw_scope(self, rec, entrance_line):
-    #     self.out_info['rec'] = rec
-    #     self.out_info['entrance_line'] = entrance_line
-    #
-    # def draw_num(self):
-    #     self.out_info['pass_by'] = self.pass_num
-    #     self.out_info['entran'] = self.in_num
-    #     self.out_info['ratio'] = round(self.ratio, 2)
-
     def draw_track(self, track):
         color_map = colormap()
         color = int(color_map[track['draw_id'] % 79][0]), int(color_map[track['draw_id'] % 79][1]), int(
@@ -385,50 +382,42 @@ class FaceCounts(object):
             self.out_info['list_id'].append(track['draw_id'])
             self.out_info['list_color'].append(color)
 
+    @async_call
+    def oneItem(self, content):
+        requests.post(url='http://172.16.104.247:5000/flow/pvcount', data=content)
+
     def send(self):
-        def oneItem(content):
-            # requests.post(url='http://172.16.104.247:5000/flow/pvcount', data=content)
-            if self.debug:
-                if content["in_num"] or content['out_num'] or content['pass_num']:
+        if not self.set_MACetc:
+            return
+        in_num, out_num, pass_num = 0, 0, 0
+        for shop in self.shopID:
+            try:
+                _in_num, _out_num, _pass_num = self.statics_in[shop], self.statics_out[shop], self.statics_passby[
+                    shop]
+            except Exception as e:
+                _in_num, _out_num, _pass_num = (0,) * 3
+                print(e)
+            content = {'media_id': self.media_id, 'media_mac': self.media_mac, "count_area_id": shop,
+                       "count_area_type": self.lineType[shop], "in_num": _in_num,
+                       "out_num": _out_num, "pass_num": _pass_num,
+                       "event_time": int(time.time())}
+            in_num += content["in_num"]
+            out_num += content['out_num']
+            pass_num += content['pass_num']
+            if content["in_num"] or content['out_num'] or content['pass_num']:
+                self.sendInfoList.extend([content])
+                if self.debug:
                     self.canvas()
                     print(self.curID, content)
 
-        in_num, out_num, pass_num = 0, 0, 0
-        if not self.set_MACetc:
-            content = self.content
-            if content["in_num"] or content['out_num'] or content['pass_num']:
-                oneItem(content)
-        else:
-            for shop in self.shopID:
-                content = {'media_id': self.media_id, 'media_mac': self.media_mac, "count_area_id": shop,
-                           "count_area_type": self.lineType[shop], "in_num": self.statics_in[shop],
-                           "out_num": self.statics_out[shop], "pass_num": self.statics_passby[shop],
-                           "event_time": int(time.time())}
-                in_num += content["in_num"]
-                out_num += content['out_num']
-                pass_num += content['pass_num']
-                if content["in_num"] or content['out_num'] or content['pass_num']:
-                    oneItem(content)
-        # self.out_info.update({'entran': in_num, 'pass_by': pass_num, 'out_num': out_num})
+        self.out_info.update({'entran': in_num, 'pass_by': pass_num, 'out_num': out_num})
 
-    # self.pad = 0
-    # def get_line_offset(self, v_line, v_pad):
-    #     return [[v_line[0][0] + v_pad, v_line[0][1]], [v_line[1][0] + v_pad, v_line[1][1]]]
-    # def clear_all(self):
-    #     self.in_num = 0
-    #     self.out_num = 0
-    #     self.pass_num = 0
-    #     self.ratio = 0
-    # if self.redefine:
-    #     self.redefine = False
-    #     if cfg_priv.BUSS.COUNT.ROI_AREA['default'] == "None" or cfg_priv.BUSS.COUNT.ROI_AREA[
-    #         'default'] is None or len(cfg_priv.BUSS.COUNT.ROI_AREA['default']) == 0:
-    #         rect = ([0 + self.pad, 0], [W + self.pad, H // 2])
-    #     else:
-    #         rect = find_rect(cfg_priv.BUSS.COUNT.ROI_AREA['default'], (H, W), self.pad)
-    #     entrance_line = self.get_line_offset(cfg_priv.BUSS.COUNT.ENTRANCE_LINE['default'], self.pad)
-    # else:
-    #     rect, entrance_line = self.rect, self.entrance_line
+    def doubleCheckSetParams(self):
+        if not self.set_MACetc:
+            new_pth = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'D_set.json')
+            _pth = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'set.json')
+            if os.path.exists(new_pth):
+                os.system("cp %s %s" % (new_pth, _pth))
 
     def __call__(self, scores, boxes, classes, ratio_h, ratio_w, H, W):
         self.H, self.W = H, W
@@ -438,26 +427,28 @@ class FaceCounts(object):
         self.out_info = {'list_track': [], 'list_box': [], 'list_id': [], 'list_color': [],
                          'entran': 0, 'pass_by': 0, 'out_num': 0, 'solid': [], 'dotted': [],
                          'rec': [[0, 0], [1, 1]], 'entrance_line': [[2, 2], [4, 4]]}
-
-        C_scores, C_boxes, C_classes = scores.copy(), boxes.copy(), classes.copy()
-        status = True
-        # self.debug = False
+        save_input = self.set_MACetc and self.record
+        save_input = False
+        if save_input:
+            C_scores, C_boxes, C_classes = scores.copy(), boxes.copy(), classes.copy()
+        status = False
+        self.doubleCheckSetParams()
         try:
             ##################################
             self.dummpy()
             single_img_info_dict = self.FishEye(scores, boxes, classes, ratio_h, ratio_w, H, W)
             self.get_tracks(single_img_info_dict, self.curID)
-            if len(single_img_info_dict['up']['annotations']): status = True
+            if len(single_img_info_dict['up']['annotations']):
+                status = True
             self.count_num()
-            # if cfg_priv.OTHER.COUNT_DRAW:
-            #     self.draw_num()
             self.send()
             ##################################
         except Exception as e:
             traceback.print_exc(e)
-            # pass
-        if self.set_MACetc and self.record and status:
+            print(e)
+        if save_input and status:
             self.recorder.save(C_scores, C_boxes, C_classes)
+
         return self.out_info
 
 
@@ -488,17 +479,23 @@ def sendall():
 if __name__ == '__main__':
     from runProject import test_set
 
-    try:
-        print("cp xxx*")
-        os.system("cp /srv/fisheye_prj/AI_Server/xxx_* /home/user/project/run_retina/build/")
-    except Exception as e:
-        print("cp xxx* error")
-    try:
-        print("cp set.json")
-        os.system("cp /srv/fisheye_prj/AI_Server/utils/py_extension/D_set.json "
-                  "/home/user/project/run_retina/py_extension/set.json")
-    except Exception as e:
-        print("cp set.json")
+    test_set()
+    # try:
+    #     print("cp xxx*")
+    #     os.system("cp /srv/fisheye_prj/AI_Server/xxx_* /home/user/project/run_retina/build/")
+    # except Exception as e:
+    #     print("cp xxx* error")
+    # try:
+    #     print("cp set.json")
+    #     os.system("cp /srv/fisheye_prj/AI_Server/utils/py_extension/D_set.json "
+    #               "/home/user/project/run_retina/py_extension/set.json")
+    # except Exception as e:
+    #     print("cp set.json")
+    # 进出店参数框
+    # if os.path.exists('/home/user/project/run_retina/py_extension/D_set.json'):
+    #     os.system("cp /home/user/project/run_retina/py_extension/D_set.json "
+    #               "/home/user/project/run_retina/py_extension/set.json")
+    # debug可视图
     try:
         os.system("rm /home/user/project/run_retina/py_extension/vs/*")
     except Exception as e:
@@ -509,7 +506,7 @@ if __name__ == '__main__':
     npz = '../build/xxx_%d.npz'
     n = N = 100
     while True:
-        if not os.path.exists(npz % n) or n / 100 >= 20: break
+        if not os.path.exists(npz % n) or n / 100 >= 10: break
         print(npz % n)
         data = np.load(npz % n)
         n += N

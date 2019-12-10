@@ -10,7 +10,7 @@ float BoxTracker::intersection_over_union(Rect box1, Rect box2) {
     int x2 = std::min((box1.x + box1.width), (box2.x + box2.width));
     int y2 = std::min((box1.y + box1.height), (box2.y + box2.height));
     float over_area = std::max((x2 - x1), 0) * std::max((y2 - y1), 0);
-    float iou = float(over_area) / (box1.width * box1.height + box2.width * box2.height - over_area);
+    float iou = float(over_area) / (box1.width * box1.height + box2.width * box2.height - over_area + 1e-5);
     return iou;
 }
 

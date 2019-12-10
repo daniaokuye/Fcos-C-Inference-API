@@ -8,7 +8,7 @@
 //opencv_demo.cpp
 // how to use python class & function in c++: https://blog.csdn.net/sihai12345/article/details/82745350
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION //需要放在numpy/arrayobject.h之前
-#define Mmax(a, b)a>b?a:b
+#define Mmax(a, b)(a)>(b)?(a):(b)
 
 #include "python_route.h"
 //#include <opencv/cv.hpp>
@@ -28,6 +28,7 @@ python_route::~python_route() {
     Py_DECREF(pModule);
     Py_DECREF(pFunc);
     Py_DECREF(postFunc);
+    Py_DECREF(selfPost);
     Py_Finalize();
 }
 
@@ -42,8 +43,8 @@ python_route::python_route(float ratio_h, float ratio_w, int H, int W) {
     /* 非常重要，折腾的时间主要是因为这儿引起的【1】 */
     Py_Initialize();
     PyRun_SimpleString("import sys");
-//    PyRun_SimpleString("sys.path.append(\"/home/user/project/run_retina/py_extension\")");
-    PyRun_SimpleString("sys.path.append(\"/srv/fisheye_prj/AI_Server/utils/py_extension\")");
+    PyRun_SimpleString("sys.path.append(\"/home/user/project/run_retina/py_extension\")");
+//    PyRun_SimpleString("sys.path.append(\"/srv/fisheye_prj/AI_Server/utils/py_extension\")");
 
     init();
     LoadModel(ratio_h, ratio_w, H, W);
@@ -70,9 +71,9 @@ void python_route::LoadModel(float ratio_h, float ratio_w, int H, int W) {
     }
 
     postFunc = PyObject_GetAttrString(pModule, "box_info");
-    sendFunc = PyObject_GetAttrString(pModule, "sendToDatabase");
+    //sendFunc = PyObject_GetAttrString(pModule, "sendToDatabase");
     PyObject *setFunc = PyObject_GetAttrString(pModule, "set_param");
-    if (postFunc == NULL or setFunc == NULL or sendFunc == NULL) {
+    if (postFunc == NULL or setFunc == NULL) {//or sendFunc == NULL
         PyErr_Print();
         throw std::invalid_argument("fails to build python instance");
     }
@@ -90,8 +91,16 @@ void python_route::LoadModel(float ratio_h, float ratio_w, int H, int W) {
     Py_DECREF(pRetValue);
 }
 
-void python_route::PythonPost(cv::Mat dst, void *boxes, void *scores, void *classes, int run_batch, int num_det) {
-    PyObject *pArgs = PyTuple_New(3);
+//void python_route::SendDB() {
+//
+//    PyObject_CallObject(sendFunc, pArgs);
+//    Py_DECREF(pArgs);
+//}
+
+void python_route::PythonPost(void *boxes, void *scores, void *classes, int run_batch,
+                              int num_det, bool toCanvas,
+                              cv::Mat ResImg, int media_id, int frame_id, const char *mac) {
+    PyObject *pArgs = PyTuple_New(7);
     npy_intp dims_s[] = {run_batch, num_det};
     PyObject *sValue = PyArray_SimpleNewFromData(2, dims_s, NPY_FLOAT32, scores);
     npy_intp dims_c[] = {run_batch, num_det};
@@ -102,23 +111,45 @@ void python_route::PythonPost(cv::Mat dst, void *boxes, void *scores, void *clas
     PyTuple_SetItem(pArgs, 0, sValue);
     PyTuple_SetItem(pArgs, 1, cValue);
     PyTuple_SetItem(pArgs, 2, bValue);
-    PyObject *pRetValue = PyObject_CallObject(postFunc, pArgs);
-    if (pRetValue == NULL) {
-        PyErr_Print();
-        throw std::invalid_argument("CalllObject return NULL");
+
+    //those are not send everytime mqtt
+    if (!ResImg.empty()) {
+        buffer.resize(static_cast<size_t>(ResImg.rows) * static_cast<size_t>(ResImg.cols));
+        cv::imencode(".jpg", ResImg, buffer);
+        auto *enc_msg = reinterpret_cast<unsigned char *>(buffer.data());
+        npy_intp dims_m[] = {buffer.size(), 1};
+        //https://blog.csdn.net/jacke121/article/details/78536432
+        PyObject *mValue = PyArray_SimpleNewFromData(2, dims_m, NPY_UBYTE, enc_msg);
+        PyTuple_SetItem(pArgs, 3, mValue);
+        //std::cout << "sssss: " << buffer.size() << std::endl;
+    } else {
+        //std::cout << "ddddd: " << std::endl;
+        PyTuple_SetItem(pArgs, 3, Py_BuildValue("s", ""));
     }
-    ParseRet(dst, pRetValue);
+    PyTuple_SetItem(pArgs, 4, Py_BuildValue("i", media_id));
+    PyTuple_SetItem(pArgs, 5, Py_BuildValue("i", frame_id));
+    PyTuple_SetItem(pArgs, 6, Py_BuildValue("s", mac));
+
+    if (toCanvas) {
+        selfPost = PyObject_CallObject(postFunc, pArgs);
+        if (selfPost == NULL) {
+            PyErr_Print();
+            throw std::invalid_argument("CalllObject return NULL");
+        }
+    } else {
+        PyObject *pRetValue = PyObject_CallObject(postFunc, pArgs);
+        Py_DECREF(pRetValue);
+    }
+
     // Py_DECREF
     Py_DECREF(pArgs);
-    Py_DECREF(pRetValue);
 }
 
-void python_route::ParseRet(cv::Mat dst, PyObject *pRetValue) {
+void python_route::ParseRet(cv::Mat dst, float ratiow, float ratioh) {
     int half_h = dst.rows / 2;
-
     /* 解析返回结果 */
     PyArrayObject *r1, *r2, *r3, *r4, *r5, *r6, *r7;
-    if (!PyArg_UnpackTuple(pRetValue, "ref", 7, 7, &r1, &r2, &r3, &r4, &r5, &r6, &r7)) {
+    if (!PyArg_UnpackTuple(selfPost, "ref", 7, 7, &r1, &r2, &r3, &r4, &r5, &r6, &r7)) {
         PyErr_Print();
         throw std::invalid_argument("PyArg_ParseTuple Crash!");
     }
@@ -129,13 +160,24 @@ void python_route::ParseRet(cv::Mat dst, PyObject *pRetValue) {
     npy_intp *shape5 = PyArray_SHAPE(r5);
     npy_intp *shape6 = PyArray_SHAPE(r6);
     npy_intp *shape7 = PyArray_SHAPE(r7);
+    if (!shape1[0]) return;
+
+//    std::cout << "shape[1]:" << shape1[0] <<
+//              " shape2:" << shape2[0] << "," << shape2[1] <<
+//              " shape3:" << shape3[0] <<
+//              " shape4:" << shape4[0] << "," << shape4[1] <<
+//              " shape5:" << shape5[0] <<
+//              " shape6:" << shape6[0] << "," << shape6[1] <<
+//              " shape7:" << shape7[0] <<
+//              std::endl;
+
     float *base_r1 = (float *) PyArray_DATA(r1);//身份id N
     float *base_r2 = (float *) PyArray_DATA(r2);//跟踪线 n*2
     float *base_r3 = (float *) PyArray_DATA(r3);//跟踪数据的长度 N
     float *base_r4 = (float *) PyArray_DATA(r4);//人体框 N*4
     float *base_r5 = (float *) PyArray_DATA(r5);//进出路过3个数字 3
     float *base_r6 = (float *) PyArray_DATA(r6);//进出线框，4*2
-    float *base_r7 = (float *) PyArray_DATA(r7);//颜色对应id，(3*n)
+    float *base_r7 = (float *) PyArray_DATA(r7);//颜色对应id，(3*N)
     std::vector<float> ids(base_r1, base_r1 + shape1[0]);
     std::vector<float> track(base_r2, base_r2 + shape2[0] * shape2[1]);
     std::vector<float> track_num(base_r3, base_r3 + shape3[0]);
@@ -146,41 +188,41 @@ void python_route::ParseRet(cv::Mat dst, PyObject *pRetValue) {
     int cw = shape1[0] > 0 ? shape7[0] / shape1[0] : 3;
     //track line;
     for (auto i = 0, j = 0; i < shape3[0]; i++) {
+        if (i > track_num.size() or i > box.size())break;
         int len = int(track_num[i]), id = int(ids[i]);
         int r = int(color[cw * i]), g = int(color[cw * i + 1]), b = int(color[cw * i + 2]);
         float x1 = round(box[4 * i]), y1 = round(box[4 * i + 1]),
                 w = round(box[4 * i + 2]), h = round(box[4 * i + 3]);
         int ratio = int(1.0 * w * h / (50 * 100)), style = 2;
         ratio = ratio < 5 ? ratio : 5;
-        style = style > ratio ? style : ratio;
+        style = style > ratio ? ceil(style * ratioh) : ceil(ratio * ratioh);
+
+
         for (auto k = j; k < j + len; k++) {
-//            std::cout << cv::Point(track[2 * k], track[2 * k + 1]) << ';';
+            //std::cout << cv::Point(track[2 * k], track[2 * k + 1]) << ';';
+            if (2 * k > track.size())break;
             if (k == j) {
-                cv::circle(dst, cv::Point(track[2 * k], track[2 * k + 1]), 1, cv::Scalar(r, g, b), style);
+                cv::circle(dst, cv::Point(track[2 * k] * ratiow, track[2 * k + 1] * ratioh),
+                           ceil(8 * ratioh), cv::Scalar(r, g, b), -1);
                 continue;
             }
-            float status = (track[2 * k - 1] - half_h) * (track[2 * k + 1] - half_h);
+            float status = (track[2 * k - 1] * ratiow - half_h) * (track[2 * k + 1] * ratioh - half_h);
             if (status < 0)continue;
-            cv::line(dst, cv::Point(track[2 * k - 2], track[2 * k - 1]),
-                     cv::Point(track[2 * k], track[2 * k + 1]), cv::Scalar(r, g, b), style);
+            cv::line(dst, cv::Point(track[2 * k - 2] * ratiow, track[2 * k - 1] * ratioh),
+                     cv::Point(track[2 * k] * ratiow, track[2 * k + 1] * ratioh), cv::Scalar(r, g, b), style);
         }
         j += len;
-        cv::putText(dst, std::to_string(id), cv::Point(int(x1) + 6, int(y1) + 6), cv::FONT_HERSHEY_PLAIN,
-                    Mmax(2.0, style * 0.8), cv::Scalar(r, g, b), Mmax(1, int(style
-                        *0.8)));
-        cv::rectangle(dst, cv::Point(x1, y1), cv::Point(x1 + w, y1 + h), cv::Scalar(r, g, b), style);
+        cv::putText(dst, std::to_string(id), cv::Point(int(x1 * ratiow) + 6, int(y1 * ratioh) + 6),
+                    cv::FONT_HERSHEY_PLAIN, Mmax(2.0, style * 0.8), cv::Scalar(r, g, b), int(style * 0.8));
+        cv::rectangle(dst, cv::Point(x1 * ratiow, y1 * ratioh),
+                      cv::Point((x1 + w) * ratiow, (y1 + h) * ratiow), cv::Scalar(r, g, b), style);
 //        std::cout << "c:" << r << ", " << g << ", " << b << ";";
     }
+    /*  Py_DECREF(selfPost);
+      */
+
 //    std::cout << std::endl;
-//
-//    std::cout << "shape[1]:" << shape1[0] <<
-//              " shape2:" << shape2[0] << "," << shape2[1] <<
-//              " shape3:" << shape3[0] <<
-//              " shape4:" << shape4[0] << "," << shape4[1] <<
-//              " shape5:" << shape5[0] <<
-//              " shape6:" << shape6[0] << "," << shape6[1] <<
-//              " shape7:" << shape7[0] <<
-//              std::endl;
+
 //    std::cout << "ids ";
 //    for (auto c: ids)std::cout << c << ',';
 //    std::cout << std::endl;
@@ -202,51 +244,6 @@ void python_route::ParseRet(cv::Mat dst, PyObject *pRetValue) {
 
 }
 
-void python_route::SendDB(cv::Mat dst, int media_id, int frame_id, const char *mac) {
-    PyObject *pArgs = PyTuple_New(4);
-    cv::Size ResImgSiz = cv::Size(dst.cols * 0.4, dst.rows * 0.4);
-    cv::Mat ResImg = cv::Mat(ResImgSiz, CV_8UC3);
-    cv::resize(dst, ResImg, ResImgSiz);
-    //std::cout << "row:" << ResImg.rows << " col:" << ResImg.cols << " c:" << ResImg.channels() << std::endl;
-    //1. 使用numpy格式传输数据
-    //npy_intp dims_s[] = {ResImg.rows, ResImg.cols, ResImg.channels()};
-    //PyObject *sValue = PyArray_SimpleNewFromData(3, dims_s, NPY_UINT8, ResImg.data);
-    //PyTuple_SetItem(pArgs, 0, sValue);
-    //1. 使用numpy格式传输数据
-    //-------------------------------------
-
-    //2. 使用base64传输数据
-    std::vector <uchar> buffer;
-    buffer.resize(static_cast<size_t>(ResImg.rows) * static_cast<size_t>(ResImg.cols));
-    cv::imencode(".jpg", ResImg, buffer);
-
-//    cv::imwrite("test.jpg", ResImg);
-//    std::cout << "buffer.size:" << buffer.size() << std::endl;
-//    int _len = int(buffer.size());
-//    int length = int(buffer.size() / 3 * 4.2);
-//    char *encoded = new char[length];
-//    std::cout << "buffer.size:" << buffer.size() << " /3:" << length
-//              << " nL:" << _len << std::endl;
-//    base64_encode(enc_msg, buffer.size(), encoded);
-//    char *encoded = reinterpret_cast< char *>(buffer.data());//test 2
-
-    auto *enc_msg = reinterpret_cast<unsigned char *>(buffer.data());
-    npy_intp dims_s[] = {buffer.size(), 1};
-    //https://blog.csdn.net/jacke121/article/details/78536432
-    PyObject *sValue = PyArray_SimpleNewFromData(2, dims_s, NPY_UBYTE, enc_msg);
-    PyTuple_SetItem(pArgs, 0, sValue);
-    //2. 使用base64传输数据
-
-    PyTuple_SetItem(pArgs, 1, Py_BuildValue("i", media_id));
-    PyTuple_SetItem(pArgs, 2, Py_BuildValue("i", frame_id));
-    PyTuple_SetItem(pArgs, 3, Py_BuildValue("s", mac));
-
-    PyObject *pRetValue = PyObject_CallObject(sendFunc, pArgs);
-    if (pRetValue == NULL) {
-        PyErr_Print();
-        throw std::invalid_argument("SendDB return NULL");
-    }
-}
 
 void python_route::PythonInfer(int batch, int row, int col, void *ipt) {
     /* 准备输入参数 */

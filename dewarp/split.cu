@@ -11,7 +11,7 @@
 #define uint32 unsigned long
 
 
-void cudasafe(cudaError_t code,const char *message,const char *file, int line) {
+void cudasafe(cudaError_t code, const char *message, const char *file, int line) {
     if (code != cudaSuccess) {
         fprintf(stderr, "CUDA Error:%s. %s. In %s line %d\n", cudaGetErrorString(code),
                 message, file, line);
@@ -91,13 +91,15 @@ splitProcess::splitProcess(int w, int h, int c, int outW, int outH, int slots, i
 }
 
 void splitProcess::get_refer() {
-    last_slots = (last_slots + 1) % slots;
+//    last_slots = (last_slots + 1) % slots;//逻辑上和输出保持绑定关系即可
+    last_slots = n_slots;//保持固定的同步
+    n_slots = (n_slots + 1) % slots;
     refer_dyn = (void *) ((float *) pixels_dev + last_slots * newImageLength);
 //    std::cout << "get refer:" << last_slots << std::endl;
 }
 
 void splitProcess::run() {
-    n_slots = (n_slots + 1) % slots;
+//    n_slots = (n_slots + 1) % slots;
     out_Pixels_dyn = (void *) ((float *) pixels_dev + n_slots * newImageLength);
 
     // Start measuring time

@@ -13,6 +13,7 @@
 #include <gflags/gflags.h>
 #include <thread>
 #include <exception>
+#include <time.h>
 
 #define sign(x) ( ((x) <0 )? -1 : ((x)> 0) )
 
@@ -28,6 +29,11 @@ unsigned long GetTickCount() {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+}
+
+float GetTickCount2() {
+    std::clock_t clock = std::clock();
+    return 1000.0 * clock / CLOCKS_PER_SEC;
 }
 
 bool loadKeyParams(std::string yaml, int &s) {
@@ -102,8 +108,9 @@ void Infer_RT::setInfo(T *ptr, const char *input, int device, std::string modes)
     slots = 2;
     height = inputSize[0];
     width = inputSize[1];
-    bool saveVideo = false;// false;//
+    bool saveVideo = true;//false;//
     bool savePhoto = true;// false;//
+    //目前来看，没必要设置多个slots，因为他们内部是完全同步的，没有异步的操作
     dewarper = new deWarp(width, height, slots + 1, modes, saveVideo, savePhoto);
     dewarper->readVideo(input, device);
     h_ratio = dewarper->ratio_h;
@@ -122,6 +129,9 @@ void Infer_RT::setInfo(T *ptr, const char *input, int device, std::string modes)
     N = 1, n_post = n_count = slots - 1;
     N_s = run_batch * num_det;
     N_b = run_batch * num_det * 4;
+    show_ratio_h = show_ratio_w = 0.4;
+    cv::Size ResImgSiz = cv::Size(dewarper->col_out * show_ratio_w, dewarper->row_out * show_ratio_h);
+    for (int iii = 0; iii < 2; iii++) showDsts.push_back(cv::Mat(ResImgSiz, CV_8UC3));
     //python interpreter
     pr = new python_route(h_ratio, w_ratio, dewarper->row_out, dewarper->col_out);
     testStar = true;
@@ -137,22 +147,25 @@ void Infer_RT::getsrc() {
     delete[](data);
 }
 
-void Infer_RT::preprocess() {
+void Infer_RT::preprocess(bool joinAll, bool cpdst) {
+    //std::cout << "joinAll" << joinAll << "cpdst" << cpdst << std::endl;
     unsigned long beg = GetTickCount();
-    dewarper->process();
+    if (joinAll)dewarper->join_thread();
+    dewarper->process(cpdst);
     unsigned long end = GetTickCount();
     std::cout << "preProcess: " << end - beg << "ms\n";
 
 }
 
 void Infer_RT::process_() {
-    n_count = (n_count + 1) % slots;
     unsigned long beg = GetTickCount();
     dewarper->currentStatus();
 
-    std::cout << "Running inference..." << std::endl;
+    //std::cout << "Running inference..." << std::endl;
     vector<void *> buffers = {dewarper->data, scores_d, boxes_d, classes_d};
+    //std::cout << "Running inference. over1" << std::endl;
     engine->infer(buffers, run_batch);
+    //std::cout << "Running inference. over2" << std::endl;
     // Get back the bounding boxes
     cudaMemcpy(scores + n_count * N_s, scores_d, sizeof(float) * num_det * run_batch, cudaMemcpyDeviceToHost);
     cudaMemcpy(boxes + n_count * N_b, boxes_d, sizeof(float) * num_det * 4 * run_batch, cudaMemcpyDeviceToHost);
@@ -210,32 +223,66 @@ void Infer_RT::cal_src_ploygon(cv::Mat src, cv::Mat dst) {
     cv::imwrite("dst.jpg", dst);
 }
 
-void Infer_RT::postprocess(int No, int eclipse, int basemap) {
+void Infer_RT::_getdst(int No, int eclipse) {
     unsigned long beg = GetTickCount();
-    n_post = (n_post + 1) % slots;
+    //用来传输、保存等，非高频需求
+
+    cv::Mat dst = showDsts[dst_curid];
+    cv::Size ResImgSiz = cv::Size(dst.cols, dst.rows);
+    //先判断是否有数据，否则就用错位的数据吧
+    if (dewarper->dst.empty() or dst.empty()) {
+        //https://blog.csdn.net/jueshiwushuang2007/article/details/8855665
+        std::cout << "dst data is empty!";
+        return;
+    }
+    cv::resize(dewarper->dst, dst, ResImgSiz);
     dewarper->currentImg();
-    std::cout << "postprocess..." << std::endl;
-    if (basemap != 0)
-        dewarper->saveImg(line, true);
-//    if (testStar) {
-//        cal_src_ploygon(dewarper->src, dewarper->dst);
-//        testStar = false;
-//    }
+    cv::putText(dst, "Frame No: " + std::to_string(No) + ". Eclipse: " + std::to_string(eclipse) +
+                     "ms.", cv::Point(int(1.2 * width * show_ratio_w), int(0.2 * height * show_ratio_h)),
+                cv::FONT_HERSHEY_PLAIN, 5.0 * show_ratio_h, cv::Scalar(255, 245, 250), int(3 * show_ratio_h));
+    unsigned long end = GetTickCount();
+    std::cout << "get_dst: " << end - beg << "ms\n";
+}
+
+void Infer_RT::decorate() {
+    unsigned long beg = GetTickCount();
+    //严格要求数据非同步读写，box和dst
+    send_cur = cur;
+    cur = dst_curid;
+    dst_curid = (dst_curid + 1) % 2;
+    if (showDsts[cur].empty() ||
+        showDsts[cur].rows != dewarper->row_out * show_ratio_h ||
+        showDsts[cur].cols != dewarper->col_out * show_ratio_w) {
+        //https://blog.csdn.net/jueshiwushuang2007/article/details/8855665
+        std::cout << "decorate data is empty!" << "postProcess cur: " << showDsts[cur].empty() << ','
+                  << showDsts[cur].rows << ',' << cur << ',' << dst_curid << "\n";
+        return;
+    }
+    pr->ParseRet(showDsts[cur], show_ratio_w, show_ratio_h);
+    dewarper->saveImg(line, showDsts[cur]);// vedio or img
+    unsigned long end = GetTickCount();
+    std::cout << "decorate: " << end - beg << "ms\n";
+}
+
+void Infer_RT::postprocess(int current_frame_id, bool kept, bool &tosend) {
+    unsigned long beg = GetTickCount();
+    //std::cout << "tosend: " << tosend << "k: " << kept << "send cur: " << send_cur << "cur: " << cur << std::endl;
+    n_post = n_count;
+    n_count = (n_count + 1) % slots;
     int base = n_post * N_s;
-
-    pr->PythonPost(dewarper->dst, &boxes[base * 4], &scores[base], &classes[base], run_batch, num_det);
-    cv::putText(dewarper->dst, "Frame No: " + std::to_string(No) + ". Eclipse: " + std::to_string(eclipse) + "ms.",
-                cv::Point(int(1.2 * width), int(0.2 * height)),
-                cv::FONT_HERSHEY_PLAIN, 5.0, cv::Scalar(255, 245, 250), 3);
-    //0。1*H ;3.0->5.0;2->3
-//    dewarper->saveImg(line);// 2
-    pr->SendDB(dewarper->dst, meida_id, dewarper->current_frame, mac);// 1
-
+    cv::Mat Res;
+    if (tosend) {
+        Res = showDsts[send_cur];
+        tosend = false;
+    }
+    //不能两个python调用同时进行，会导致[Python] Fatal error: GC object already tracked问题！
+    pr->PythonPost(&boxes[base * 4], &scores[base], &classes[base], run_batch, num_det, kept,
+                   Res, meida_id, current_frame_id, mac);
     unsigned long end = GetTickCount();
     std::cout << "postProcess: " << end - beg << "ms\n";
 }
 
-void Infer_RT::postprocess_fowShow() {
+void Infer_RT::_fowShow() {
     unsigned long beg = GetTickCount();
     n_post = (n_post + 1) % slots;
     dewarper->currentImg();
@@ -271,7 +318,8 @@ void Infer_RT::postprocess_fowShow() {
     string res = "detections" + to_string(N++) + ".jpg";
     std::cout << "save img to:" << res << std::endl;
     // Write image
-    dewarper->saveImg(res);
+    cv::Mat ResImg;
+    dewarper->saveImg(res, ResImg);
     unsigned long end = GetTickCount();
     std::cout << "\n postProcessForshow: " << end - beg << "ms\n";
 }
@@ -279,30 +327,72 @@ void Infer_RT::postprocess_fowShow() {
 //about thread: 1. https://www.cnblogs.com/wangguchangqing/p/6134635.html
 //              2. https://blog.csdn.net/hai008007/article/details/80246437
 void Infer_RT::run() {
-    auto fishes = [&]() {
-        process_();
-    };
     unsigned long beg = GetTickCount(), t1;
+    std::thread infer_, tail, isStop, rzdst, decor;
+    int i = 0, eclipse = 0, carrayOnGap = 3;
+    bool tocanvas = false, stop, baseImg = false, dst_t = false, sendDecorate = false;
+
+    auto fishes = [=, &stop, &i, &baseImg]() {
+        unsigned long beg = GetTickCount();
+        int saveImg = 0;
+        stop = loadKeyParams(yaml, saveImg);
+        if (saveImg != 0) baseImg = true;
+        cv::Mat ResImg;
+        //std::cout << "join dst:" << i << ',' << (i % carrayOnGap == 0) << std::endl;
+        if (i > 0 && i % carrayOnGap == 0) {
+            dewarper->join_dst();//需在_getdst之前完成
+            if (baseImg) dewarper->saveImg(line, ResImg, true);
+        }
+        //std::cout << "join dst2:" << std::endl;
+        unsigned long end = GetTickCount();
+        std::cout << "fishes: " << end - beg << "ms" << std::endl;
+    };
     preprocess();
-    std::thread dataPreparation, dataPostparation, isStop;
-    int i = 0, saveImg;
     while (true) {
         t1 = GetTickCount();
-        isStop = std::thread([=, &saveImg] { stop = loadKeyParams(yaml, saveImg); });
-        dataPreparation = std::thread(fishes);//model
-        preprocess();//read img
-        if (i > 0)dataPostparation.join();//python and show img
-        dataPreparation.join();
-        dataPostparation = std::thread([=] { postprocess(i, int(GetTickCount() - t1), saveImg); });
-        isStop.join();
+        // 线程1：检查是否需要停止循环；是否保存底图
+        isStop = std::thread(fishes);//当前循环完成2ms
+        // 线程2：获取展开图
+        if (i > 0 && i % carrayOnGap == 0) {
+            rzdst = std::thread([=] { _getdst(i, eclipse); });//resize dst||当前循环完成5ms
+            dst_t = true;
+            if (tocanvas) {//不用太频繁的刷新
+                std::cout << "end decorate:" << i << std::endl;
+                tocanvas = false;
+                decor.join();
+                sendDecorate = true;
+            }
+        }
+        // 线程3：模型运行
+        //关于输出的box、score等||在infer之前确定写入那个，空出哪个槽位
+        infer_ = std::thread([=] { process_(); });//model 当前循环完成54ms
 
-        std::cout << "--- No." << ++i << " & " << GetTickCount() - t1
-                  << " ms ---" << saveImg << std::endl << std::endl;
+        preprocess(true, (i + 1) % carrayOnGap == 0);//read img 当前循环完成50-60ms
+        isStop.join();//2ms
+        infer_.join();//54ms
+
+        // 线程4：跟踪线
+        if (i > 0)tail.join();
+        tail = std::thread([=, &sendDecorate] { postprocess(i - 1, (i + 1) % carrayOnGap == 0, sendDecorate); });
+
+        // 线程5：画线等
+        if (i > 0 && i % carrayOnGap == 0) {//时间差不多是比前传2倍多一点
+            rzdst.join();//在decorate之前结束 5ms
+            tocanvas = true;
+            dst_t = false;
+            decor = std::thread([=] { decorate(); });
+        }
+
+        eclipse = int(GetTickCount() - t1);
+        std::cout << n_post << n_count << "--- No." << ++i << " & " << eclipse <<
+                  " ms ---" << stop << std::endl << std::endl;
         if (!dewarper->has_frame or stop)break;
     }
-    dataPostparation.join();
+    if (dst_t)rzdst.join();
+    if (tocanvas)decor.join();
+    tail.join();
     unsigned long end = GetTickCount();
-    std::cout << "Mean time: " << 1.0 * (end - beg) / N << "ms " << std::endl;
+    std::cout << "Mean time: " << 1.0 * (end - beg) / i << "ms " << std::endl;
 }
 
 int main(int argc, char *argv[]) {
@@ -319,6 +409,7 @@ int main(int argc, char *argv[]) {
 //    Infer_RT inferss = Infer_RT("/home/user/weight/int8_640_1280.plan", FLAGS_ipt.c_str());
     Infer_RT inferss = Infer_RT("/home/user/project/run_retina/weights/fcos_int8_640_1280.plan",
                                 FLAGS_ipt.c_str(), int(FLAGS_media_id), FLAGS_mac.c_str(), FLAGS_yaml.c_str());
+    /*
     auto mode_order = [&]() {
         int N = 5;
         unsigned long beg = GetTickCount();
@@ -331,6 +422,7 @@ int main(int argc, char *argv[]) {
         unsigned long end = GetTickCount();
         std::cout << "All time: " << 1.0 * (end - beg) / N << "ms " << std::endl;
     };
+     */
     inferss.run();
 //    mode_order();
 

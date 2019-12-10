@@ -4,7 +4,8 @@ from ut import Profiler
 from airport_untities import npbbox_iou
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../")
-from fh_tracking.fhtracker import HFtracker
+# from fh_tracking.fhtracker import HFtracker
+from box_tracking import HFtracker
 
 
 # from torch_extension.pre_count.core.config import cfg_priv
@@ -64,6 +65,8 @@ class FishEye(object):
         '''
         aim to pack the tracking function of facelib here
         '''
+        # delete_tracking_id = []
+        # tracking_id = list(range(len(detection_rects)))
         tracking_id, delete_tracking_id = \
             self.tracker.tracking_Frame_Hungarian(detection_rects, track_w, track_h, cut_lines)
         out = {'tracking_id': tracking_id,
@@ -484,12 +487,12 @@ class FishEye(object):
                 else:
                     # replace those with high IOU
                     detes_res = self.gap_detect_overlap2(detes_res, score, self.nms_thres, Is_del_box=self.del_box)
-
                 if not self.Evaluate:
                     ###todo:
                     track_id = self.tracking(detes_res['box'].copy(), detes_res['W'], detes_res['H'], detes_res['cut'])
                     tracking_id, delete_tracking_id = self.set_global_id(track_id, detes_res, self.id_viewer)
                     detes_boxes_ = detes_res['box']
+
                 else:
                     tracking_id, delete_tracking_id = detes_res['score'], []  # score
                     detes_boxes_ = detes_res['box']  # box
@@ -517,6 +520,7 @@ class FishEye(object):
                 info['up'] = {"delete_tracking_id": delete_tracking_id, "annotations": anno}
 
                 self.profiler.stop('post_')
+
             yield info
 
     def __call__(self, scores, boxes, classes, ratio_h, ratio_w, H, W):

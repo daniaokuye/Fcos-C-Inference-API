@@ -66,12 +66,21 @@ class Fisheye():
 
     def _del(self, media_id):
         print('delete temp files')
-        delFile = []#[self.runlog]  # [self.yaml,]
+        delFile = []  # [self.runlog]  # [self.yaml,]
 
         for f in delFile:
             if os.path.exists(f):
                 print("fils will deleted: rm %s" % f)
                 os.system("rm %s" % f)
+
+
+def use_exists():
+    if os.path.exists("/srv/fisheye_prj/AI_Server/utils/py_extension/D_set.json"):
+        os.system("cp /srv/fisheye_prj/AI_Server/utils/py_extension/D_set.json "
+                  "/home/user/project/run_retina/py_extension/set.json")
+    elif os.path.exists('/home/user/project/run_retina/py_extension/D_set.json'):
+        os.system("cp /home/user/project/run_retina/py_extension/D_set.json "
+                  "/home/user/project/run_retina/py_extension/set.json")
 
 
 def test_set(debug=False):
@@ -80,11 +89,17 @@ def test_set(debug=False):
     demo.mapping[media_id] = {'media_id': media_id, 'media_mac': "00-02-D1-83-83-6E",
                               'media_rtsp': 'rtsp://root:admin123@172.16.105.199:554/live2.sdp'}
 
-    params = {'BUSS.COUNT.ROI_AREA_ID': ['1'], 'BUSS.COUNT.ROI_AREA_TYPE': {'1': 1},
+    params = {'BUSS.COUNT.ROI_AREA_ID': ['1', '3', '5'],
               'BUSS.COUNT.ROI_DOTEED_LINE_AREA': {
-                  '1': [['388.80', '50.40'], ['477.00', '52.20'], ['473.40', '322.20'], ['365.40', '322.20']]},
+                  '1': [['300.60', '54.00'], ['266.40', '322.20'], ['354.60', '322.20'], ['381.60', '57.60']],
+                  '3': [['641.45', '124.36'], ['705.27', '162.00'], ['595.64', '268.36'], ['500.73', '206.18']],
+                  '5': [['905.40', '487.80'], ['963.00', '648.00'], ['1069.20', '675.00'], ['1132.20', '581.40'],
+                        ['1123.20', '520.20'], ['1024.20', '457.20']]},
               'BUSS.COUNT.ROI_SOLID_LINE_AREA': {
-                  '1': [['253.80', '43.20'], ['230.40', '324.00'], ['329.40', '325.80'], ['349.20', '37.80']]}}
+                  '1': [['498.60', '59.40'], ['406.80', '55.80'], ['410.40', '316.80'], ['509.40', '311.40']],
+                  '3': [['376.36', '193.09'], ['664.36', '55.64'], ['850.91', '170.18'], ['603.82', '368.18']],
+                  '5': [['948.60', '495.00'], ['966.60', '615.60'], ['1105.20', '565.20'], ['1078.20', '513.00']]},
+              'BUSS.COUNT.ROI_AREA_TYPE': {'1': 2, '3': 3, '5': 1}}
     demo.set(media_id, 'ALG', params, debug=debug)
 
 
@@ -96,8 +111,8 @@ if __name__ == '__main__':
     local_video = '/../test_vedio/s.mp4'  # 's.mp4'  #
 
     if status == 's':  # start
-        demo.start(md, "00-02-D1-83-83-6E", 'rtsp://root:admin123@172.16.105.199:554/live2.sdp')
-    if status == 'd':  # start
+        demo.start(md, "00-02-D1-83-83-6E", 'rtsp://root:admin123@172.16.105.199:554/live1.sdp')
+    elif status == 'd':  # start
         demo.start(md, "'00-02-D1-83-83-71'", demo.pwd + local_video)
     elif status == 'e':  # end
         demo.stop(md)

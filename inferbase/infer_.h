@@ -21,16 +21,21 @@ public:
              int meida_id = 0, const char *mac = NULL, const char *yaml = NULL,
              int device = -1, std::string modes = "perimeter");
 
+    //device是摄像头设备号
     void process_();
 
     template<typename T>
     void setInfo(T *ptr, const char *input, int device, std::string modes);
 
-    void preprocess();
+    void preprocess(bool joinAll = false, bool cpdst = false);
 
-    void postprocess(int, int, int);
+    void postprocess(int, bool, bool&);
 
-    void postprocess_fowShow();
+    void _getdst(int, int);
+
+    void decorate();
+
+    void _fowShow();
 
     void getsrc();
 
@@ -44,7 +49,7 @@ public:
 
     deWarp *dewarper;
     cv::Mat src;
-//    std::mutex mtx;
+    std::vector <cv::Mat> showDsts;
 private:
     def_retinanet::Engine *engine;
 
@@ -53,11 +58,11 @@ private:
     int channels, num_det, height, width, slots;
 
     int run_batch, N, N_s, N_b, n_count, n_post;
-    int meida_id;
+    int meida_id, dst_curid = 1, cur = 1, send_cur;
     const char *mac;//, *yaml
-    float h_ratio, w_ratio;
+    float h_ratio, w_ratio, show_ratio_h, show_ratio_w;
     float *scores, *boxes, *classes;
     python_route *pr;
-    bool stop,testStar;
+    bool stop, testStar;
     std::string yaml, line;
 };

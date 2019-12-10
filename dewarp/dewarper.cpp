@@ -131,8 +131,10 @@ deWarp::deWarp(int w, int h, int slot, std::string modes, bool saveVideo, bool s
         row_out = int(pixels_per_degree * (perimeter_top_angle - perimeter_bottom_angle) / 2) << 2;
     }
     has_frame = true, init_ = false;
-    n_slots = last_slots = slots - 1;
-    dst_slots = slots - 1 + extraDst;
+    slots = slots > 0 ? slots : 1;//最小为1
+    //感觉这儿逻辑设计过于复杂
+//    n_slots = last_slots = slots - 1;
+    dst_slots = 0;
 }
 
 deWarp::~deWarp() {
@@ -182,18 +184,23 @@ void deWarp::readVideo(const char *input, int device) {
                             col_out, row_out, dst.data,
                             rpl, perimeter_top_angle,
                             perimeter_bottom_angle);
-    ((CameraView *) camera)->sp = new splitProcess(col_out, row_out, 3, width, height, slots);
+    ((CameraView *) camera)->sp = new splitProcess(col_out, row_out, slots, width, height, slots);
     ratio_w = ((CameraView *) camera)->sp->ratio_width;
     ratio_h = ((CameraView *) camera)->sp->ratio_height;
-    cv::Mat tempM;
-    cap >> tempM;
-    mul_mat.push(tempM);
+    for (int iii = 0; iii < 2; iii++) {
+        //for check empty
+        cv::Mat tempM;
+        cap >> tempM;
+        mul_mat.push(tempM);
+    }
+    currentImg();
 }
 
-void deWarp::saveImg(std::string filename, bool savebase) {
-    cv::Mat ResImg;
+void deWarp::saveImg(std::string filename, cv::Mat ResImg, bool savebase) {
     cv::Size ResImgSiz;
-    if ((!save_photo and !save_video) or save_video) {
+    if (ResImg.data) {
+        ResImgSiz = cv::Size(ResImg.cols, ResImg.rows);
+    } else if ((!save_photo and !save_video) or save_video) {
         ResImgSiz = cv::Size(col_out * 0.5, row_out * 0.5);
         ResImg = cv::Mat(ResImgSiz, dst.type());
         cv::resize(dst, ResImg, ResImgSiz);
@@ -204,10 +211,16 @@ void deWarp::saveImg(std::string filename, bool savebase) {
         int randomN = rand() % (sizeof(randomX));
         rs = &(randomX[randomN]);
     }
-    if (save_video) {
+    if (savebase) {
+        std::cout << "save base photo now!" << std::endl;
+        ResImgSiz = cv::Size(col_out * 0.4, row_out * 0.4);
+        ResImg = cv::Mat(ResImgSiz, dst.type());
+        cv::resize(dst, ResImg, ResImgSiz);
+        cv::imwrite(filename, ResImg);
+    } else if (save_video) {
         if (!init_) {
             init_ = true;
-            std::cout << ResImgSiz << "**************\n";
+            std::cout << "Init vedio: " << ResImgSiz << "col:" << ResImg.cols << " row" << ResImg.rows << std::endl;
             //    writer.open("dete_" + s, fourcc, fps, cv::Size(col_out, row_out));
             writer.open("dete_" + rs + "_.avi", CV_FOURCC('M', 'J', 'P', 'G'), 20, ResImgSiz);
             if (!writer.isOpened()) {
@@ -216,14 +229,10 @@ void deWarp::saveImg(std::string filename, bool savebase) {
             }
         }
         writer.write(ResImg);
-    }
-    if (savebase or (save_photo and not save_video)) {
-        ResImgSiz = cv::Size(col_out * 0.4, row_out * 0.4);
-        ResImg = cv::Mat(ResImgSiz, dst.type());
-        cv::resize(dst, ResImg, ResImgSiz);
+    } else if (save_photo) {
+        //std::cout << "save photo now!" << std::endl;
         cv::imwrite(filename, ResImg);
-    }
-    if (!save_photo and !save_video) {
+    } else {
         if (!init_) {
             init_ = true;
             cv::namedWindow("Display window" + rs, cv::WINDOW_AUTOSIZE);
@@ -240,88 +249,60 @@ bool deWarp::checkStatus() {
     return false;
 }
 
-void deWarp::process() {
-    /* 1.reset output data*/
-    n_slots = (n_slots + 1) % slots;
-    status[n_slots] = true;
-    bool x = status[n_slots];
-    /* 11.read img to queqe异步读取*/
+void deWarp::process(bool cpdst) {
+    readSwitch = false;
+    /* 1.read img to queqe异步读取*/
     readsrc = std::thread([=] {
-        for (int ii = 0; ii < 3; ++ii) {
+        //尽可能多的读入队列
+        do {
             cv::Mat tem;
             // 读取当前帧： https://www.cnblogs.com/little-monkey/p/7162340.html
             if (cap.read(tem))
                 mul_mat.push(tem);
-        }
+        } while (!readSwitch);
     });
 
-//    printf("pro: is %d with %d\n", n_slots, x);
-    ((CameraView *) camera)->resetOutput(dsts[n_slots].data);
-//    printf("|_ pro2:  is %d  _|\n", n_slots);
-    /* 2.run main function*/
-    ((CameraView *) camera)->Process();
-//    printf("pro3: is %d with %d\n", n_slots, x);
-//    int chance = 0;
-//    do {// 防止异常引起的流断开
-//        has_frame = cap.read(src);
-//        cv::waitKey(5);//每次延时n毫秒
-//    } while (++chance < 20 and !has_frame);
+    /* 2.run main function展开及切图成块*/
+    if (cpdst) getdst = std::thread([=] { ((CameraView *) camera)->getOutput(); });
+
     mul_mat.front().copyTo(src);
     mul_mat.pop();
-    for (int ii = 0; ii < mul_mat.size() / 6; ii++)mul_mat.pop();
-    std::cout << "sz:" << mul_mat.size() << std::endl;
     ++current_frame;
 
-    for (int i = 0; i < 0; i++) {
-        ++current_frame;
-        cap.grab();
-    }
+    /*3. 获取底图*/
+    ((CameraView *) camera)->Process();
 
-    readsrc.join();
+    /*4. 跳帧*/
+    for (int ii = 0; ii < mul_mat.size() / 6; ii++)mul_mat.pop();
+    for (int i = 0; i < 0 and mul_mat.size() >= 6; i++) {
+        std::cout << "pop:" << mul_mat.size();
+        mul_mat.pop();
+    }
+    /*5. 退出条件*/
     if (mul_mat.empty())has_frame = false;//队列空，则退出程序
-//    dst = dsts[n_slots];/*000000*/
-    /* 3. get data for inference*/
-//    data = ((CameraView *) camera)->sp->out_Pixels_dyn;/*000000*/
+    std::cout << "sz:" << mul_mat.size() << ',' << has_frame << std::endl;
+}
+
+void deWarp::join_thread() {
+    readSwitch = true;
+    readsrc.join();//more time to stop
+}
+
+void deWarp::join_dst() {
+    getdst.join();
 }
 
 void deWarp::currentImg() {
     dst_slots = (dst_slots + 1) % (slots + extraDst);
-    bool x = status[dst_slots];
-    dst = dsts[dst_slots];/*000000*/
-//    printf("|_ cur dst:  is %d  _ statuas:%d|\n", dst_slots,x);
-//    printf("Dst_slots: is %d with %d and out [%p]\n", last_slots, x, dst.data);
-    status[dst_slots] = false;
-
+    dst = dsts[dst_slots];
+    ((CameraView *) camera)->resetOutput(dst.data);
 }
 
 void deWarp::currentStatus() {
-    last_slots = (last_slots + 1) % slots;
-//    bool x = status[last_slots];
-//    while (not x) {
-//        printf("cur2: is %d with %d\n", last_slots, x);
-//        x = status[last_slots];
-//        usleep(100);//0.1ms
-//    }
-//    std::cout << "get current" << std::endl;
-
-    ((CameraView *) camera)->sp->get_refer();/*000000*/
-    data = ((CameraView *) camera)->sp->refer_dyn;/*000000*/
-//    printf("GET infer: slots ID: %d; refer device [%p] and himself [%p]\n",
-//           last_slots, data, (void *) (&data));
-//    status[last_slots] = false;
+    ((CameraView *) camera)->sp->get_refer();
+    data = ((CameraView *) camera)->sp->refer_dyn;
 
 }
-//
-//void *deWarp::run(void *__this) {
-//    deWarp *_this = (deWarp *) __this;
-//    _this->process();
-//}
-//
-//void deWarp::lanch() {
-//    //url: https://stackoverflow.com/questions/11628364/how-to-block-a-thread-and-resume-it
-//    pthread_t pth;
-//    pthread_create(&pth, NULL, run, (void *) this);
-//}
 
 void deWarp::mappingPolygon(int num_points, int *output_x, int *output_y, int *input_x, int *input_y) {
     ((CameraView *) camera)->GetInputPolygonFromOutputPolygon(num_points, output_x, output_y, input_x, input_y);
