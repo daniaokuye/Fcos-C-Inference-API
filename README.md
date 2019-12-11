@@ -31,6 +31,8 @@ make
     - using python code[in py_extension], which call 'fh_tracking' to track boxes.
     - if you want get base map(only 2p is suppport now),you can run commond `python runProject.py g 1`
     - after all the processes done, image with tracking line will send to local home by ToDB.py 
+
+![总流程图](./photos/flowchart.jpg)
     
     
 ## Evalution
@@ -65,7 +67,6 @@ Note: make sure the TensorRT, CuDNN and OpenCV libraries are available in your e
 We have verified these steps with the following configurations:
 * DGX-1V using the provided Docker container (CUDA 10, cuDNN 7.4.2, TensorRT 5.0.2, OpenCV 3.4.3)
 * Jetson AGX Xavier with JetPack 4.1.1 Developer Preview (CUDA 10, cuDNN 7.3.1, TensorRT 5.0.3, OpenCV 3.3.1)
-
 
 
 

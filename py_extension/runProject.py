@@ -108,7 +108,7 @@ if __name__ == '__main__':
     demo = Fisheye()
     status = sys.argv[1]
     md = int(sys.argv[2])
-    local_video = '/../test_vedio/s.mp4'  # 's.mp4'  #
+    local_video = '/../photos/s.mp4'  # 's.mp4'  #
 
     if status == 's':  # start
         demo.start(md, "00-02-D1-83-83-6E", 'rtsp://root:admin123@172.16.105.199:554/live1.sdp')
