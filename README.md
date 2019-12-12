@@ -56,7 +56,7 @@ You can also export the ONNX core model to an INT8 TensorRT engine if you have a
 Run a test inference:
 ```bash
 cd build
-export DISPLAY=:0.0                                                                                                     134 ↵
+export DISPLAY=:0.0
 python runProject.py s 1 # start
 python runProject.py e 1 # end
 python runProject.py g 1 # get base map

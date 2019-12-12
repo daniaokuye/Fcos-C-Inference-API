@@ -99,7 +99,7 @@ def test_set(debug=False):
                   '1': [['498.60', '59.40'], ['406.80', '55.80'], ['410.40', '316.80'], ['509.40', '311.40']],
                   '3': [['376.36', '193.09'], ['664.36', '55.64'], ['850.91', '170.18'], ['603.82', '368.18']],
                   '5': [['948.60', '495.00'], ['966.60', '615.60'], ['1105.20', '565.20'], ['1078.20', '513.00']]},
-              'BUSS.COUNT.ROI_AREA_TYPE': {'1': 2, '3': 3, '5': 1}}
+              'BUSS.COUNT.ROI_AREA_TYPE': {'1': 1, '3': 2, '5': 3}}
     demo.set(media_id, 'ALG', params, debug=debug)
 
 
@@ -108,7 +108,7 @@ if __name__ == '__main__':
     demo = Fisheye()
     status = sys.argv[1]
     md = int(sys.argv[2])
-    local_video = '/../photos/s.mp4'  # 's.mp4'  #
+    local_video = '/../photos/bug.avi'  # 's.mp4'  #
 
     if status == 's':  # start
         demo.start(md, "00-02-D1-83-83-6E", 'rtsp://root:admin123@172.16.105.199:554/live1.sdp')

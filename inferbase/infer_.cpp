@@ -371,7 +371,7 @@ void Infer_RT::run() {
         isStop.join();//2ms
         infer_.join();//54ms
 
-        // 线程4：跟踪线
+        // 线程4：跟踪、发送
         if (i > 0)tail.join();
         tail = std::thread([=, &sendDecorate] { postprocess(i - 1, (i + 1) % carrayOnGap == 0, sendDecorate); });
 

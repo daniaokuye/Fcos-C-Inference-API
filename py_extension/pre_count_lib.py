@@ -32,7 +32,7 @@ class FaceCounts(object):
         self.curID = 0  # 帧号
         self.set_MACetc = False  # 判断是否有设定mac，进出门店的位置标识线等
         self.sendInfoList = []
-
+        self.checkMark = {}  # 检查标记为mark的是否应该给个确定的身份：进出路过
         # 发送的基本信息格式send
         # self.content = {'media_id': -1, 'media_mac': "", "count_area_id": -1, "count_area_type": -1,
         #                 "in_num": 0, "out_num": 0, "pass_num": 0, "event_time": 0}
@@ -54,7 +54,7 @@ class FaceCounts(object):
 
     def dummpy(self):
         '''发送统计消息'''
-        if len(self.sendInfoList) > 30:
+        if len(self.sendInfoList) > 0 and not self.debug:
             for content in self.sendInfoList:
                 self.oneItem(content)
             self.sendInfoList = []
@@ -75,10 +75,11 @@ class FaceCounts(object):
             areas = []
             for t, keys in enumerate(['BUSS.COUNT.ROI_SOLID_LINE_AREA', 'BUSS.COUNT.ROI_DOTEED_LINE_AREA']):
                 Items = []
-                for i, (shopid, Points) in enumerate(params[keys].items()):
-                    if shopid not in self.shopID:
+                for i, shopid in enumerate(self.shopID):
+                    if shopid not in params[keys]:
                         print('%s should equals to the shop IDS %s:' % (str(shopid), str(self.shopID)))
                         continue
+                    Points = params[keys][shopid]
                     # todo: may change order here: rows, cols
                     points = np.array([[int(eval(x) * 2.5), int(eval(y) * 2.5)] for x, y in Points], dtype=np.int32)
                     Items.append(points)
@@ -91,7 +92,7 @@ class FaceCounts(object):
                 os.system('rm %s' % pth)
 
     def canvas(self):
-        img = np.ones((self.H, self.W, 3), dtype=np.uint8) * 255
+        img = np.ones((self.H, self.W + 300, 3), dtype=np.uint8) * 255
         img[:, :2] = 0
         img[:, -2:] = 0
         img[:2, :] = 0
@@ -106,9 +107,9 @@ class FaceCounts(object):
                 for pi in range(len(dotted)):
                     cv2.line(img, (dotted[(pi + 1) % len(dotted)][0], dotted[(pi + 1) % len(dotted)][1]),
                              (dotted[pi][0], dotted[pi][1]), (100, 100, 100), 2)
-                cv2.putText(img, "Type-%s" % cur_id, (solid[0][0] + 1, solid[0][1] - 16),
+                cv2.putText(img, "T:%sS:%s" % (cur_id, shop), (solid[0][0] + 1, solid[0][1] - 16),
                             cv2.FONT_HERSHEY_SIMPLEX, 1.5, (80, 80, 80), 2)
-                cv2.putText(img, "Type-%s" % cur_id, (dotted[0][0] + 1, dotted[0][1] - 16),
+                cv2.putText(img, "T:%sS:%s" % (cur_id, shop), (dotted[0][0] + 1, dotted[0][1] - 16),
                             cv2.FONT_HERSHEY_SIMPLEX, 1.5, (100, 100, 100), 2)
         cv2.putText(img, "cur id-%d" % self.curID, (int(self.W * 0.6), int(self.H * 0.1)),
                     cv2.FONT_HERSHEY_SIMPLEX, 3, (80, 80, 80), 2)
@@ -159,6 +160,7 @@ class FaceCounts(object):
         status = []
         if not self.set_MACetc:
             return status
+        # 先实后虚，防止迈了一大步
         for i, (solid, dotted) in enumerate(self.areas):
             shop = self.shopID[i]
             for ii in range(len(solid)):
@@ -184,7 +186,7 @@ class FaceCounts(object):
             self.statics_out = dict.fromkeys(self.shopID, 0)
             self.statics_passby = dict.fromkeys(self.shopID, 0)
         up_and_down_frames = 2
-        for person in img_data['up']["annotations"]:
+        for person in img_data["annotations"]:
             track_id = person["tracking_id"]
             global_id = person["global_id"]
             box_xywh = person["head_bbox"]
@@ -211,8 +213,38 @@ class FaceCounts(object):
             if len(self.tracks[track_id]['track']) > 1:
                 aax, aay = self.tracks[track_id]['track'][-2]
                 bbx, bby = position
+
+                # 检查是否标记为mark的可以认为是路过
+                for c_id in list(self.checkMark.keys()):
+                    c_key_s, c_key_d, c_shop = self.checkMark[c_id]
+                    try:
+                        c_record = len(self.tracks[c_id]['solid'])
+                        if c_record - self.tracks[c_id][c_key_s] > 5:
+                            self.tracks[c_id][c_key_d] = -1
+                            self.tracks[c_id][c_key_s] = -1
+                            self.statics_passby[c_shop] += 1
+                            self.checkMark.pop(c_id)
+                    except Exception as e:
+                        self.checkMark.pop(c_id)
+                        continue
+                # if self.curID == 837:
+                #     print()
                 # todo: cross line
                 rets = [] if abs(aax - bbx) > self.W // 2 else self.deter_in_out(aax, aay, bbx, bby)
+
+                '''计数逻辑：
+                首先，判断是否碰线，碰的什么样的线；
+                其次，分析碰线次序，来判断是出还是进。
+                    口口型1.碰一次实线后，至少碰一次虚线后：进；反之，出；碰两次实线，一段时间没有记录或一段时间没碰虚线，路过
+                    回字型2.碰一次实线后，碰一次虚线：进；反之，出；碰两次实线，路过。
+                    口字型3.将碰线视为：只有路过；或只有进出。
+                最后，对于情况1，需对疑是路过进行标记，最终记做路过或进店（店口徘徊）
+                TODO：未来，可添加位移量。目前只考虑碰线这一事件变量。
+                所以，目前使用单个整数数字来表示碰线次序，浮点数来标记。单个数字即可完成。
+                以上，为value值的意义和表示方法。
+                key包含有shop信息，线类型信息。
+                故目前使用key-value对来表示关系，key-value属于不同的id字典。
+                '''
                 for ret in rets:
                     types, shop = ret
                     id_record = len(self.tracks[track_id]['solid'])
@@ -224,64 +256,79 @@ class FaceCounts(object):
                         old_key_S = self.tracks[track_id][idx_key_s]
                     if idx_key_d in self.tracks[track_id]:
                         old_key_D = self.tracks[track_id][idx_key_d]
-                    '''计数逻辑：
-                    首先，判断是否碰线，碰的什么样的线；
-                    其次，分析碰线次序，来判断是出还是进。
-                        口口型1.碰一次实线后，至少碰一次虚线后：进；反之，出；碰两次实线，一段时间没有记录或一段时间没碰虚线，路过
-                        回字型2.碰一次实线后，碰一次虚线：进；反之，出；碰两次实线，路过。
-                        口字型3.将碰线视为：只有路过；或只有进出。
-                    最后，对于情况1，需对疑是路过进行标记，最终记做路过或进店（店口徘徊）
-                    TODO：未来，可添加位移量。目前只考虑碰线这一事件变量。
-                    所以，目前使用单个整数数字来表示碰线次序，浮点数来标记。单个数字即可完成。
-                    以上，为value值的意义和表示方法。
-                    key包含有shop信息，线类型信息。
-                    故目前使用key-value对来表示关系，key-value属于不同的id字典。
-                    '''
-                    # 如果经过一段时间仍没有消掉mark，或者有更新记录，那么就计入passby；删除实线框记录
-                    if isinstance(old_key_D, float) and (abs(id_record - old_key_D) < 20 or types != ''):
-                        self.statics_passby[shop] += 1
-                        self.tracks[track_id][idx_key_d] = int(self.tracks[track_id][idx_key_d])
-                        self.tracks[track_id][idx_key_s] = -1
 
+                    # 如果经过一段时间仍没有消掉mark，或者有更新记录，那么就计入passby；删除实线框记录
+                    if isinstance(old_key_D, float):  # 不管此id是碰了实线还是虚线，反正是碰线进来的了
+                        if types == 'd':
+                            self.statics_in[shop] += 1
+                            self.tracks[track_id][idx_key_s] = -1
+                        if types == 's':
+                            self.statics_passby[shop] += 1
+                            self.tracks[track_id][idx_key_s] = id_record
+                        # 只有类型1才有mark，所以只考虑它就好了
+                        self.tracks[track_id][idx_key_d] = -1
+                        self.checkMark.pop(track_id)
+                        continue
+                    # 只有类型1才会出现，出店事件发生后，可能置身实线框内，又折回碰到虚线
+                    if isinstance(old_key_S, float):
+                        if types == 's':  # 就是出店了
+                            old_key_S = -1
+                        if types == 'd':  # 实锤置身实线框内
+                            old_key_S = id_record - up_and_down_frames - 1
+
+                    # 更新记录以及排除密集碰线的情况.暂时不管密集撞线情况
                     if types == 's':
                         self.tracks[track_id]['solid'][-1] = shop
-                        if id_record - old_key_S < up_and_down_frames and id_record >= 2: old_key_S = id_record
+                        # if id_record - old_key_S < up_and_down_frames and id_record >= 2: old_key_S = -1
                         self.tracks[track_id][idx_key_s] = id_record
                         new_key_S = id_record
                     if types == 'd':
                         self.tracks[track_id]['dotted'][-1] = shop
-                        if id_record - old_key_D < up_and_down_frames and id_record >= 2: old_key_D = id_record
+                        # if id_record - old_key_D < up_and_down_frames and id_record >= 2: old_key_D = -1
                         self.tracks[track_id][idx_key_d] = id_record
                         new_key_D = id_record
 
                     # 让new始终作为最新记录
                     if new_key_S == -1:
                         old_key_S, new_key_S = new_key_S, old_key_S
-                    if new_key_D == -1:
+                    # 类型3会保留旧记录
+                    if new_key_D == -1 and self.lineType[shop] != 3:
                         old_key_D, new_key_D = new_key_D, old_key_D
+                    # 一步穿两线的情况，尤其对于类型1更常见
+                    if new_key_D == new_key_S:
+                        if old_key_D > 0:  # 穿过了一次虚线了
+                            new_key_S += 1
+                        if track_id in self.checkMark and self.checkMark[track_id][0] == idx_key_s:
+                            new_key_D += 1
+                            self.checkMark.pop(track_id)
+
                     # 用记录来计数
                     door_status = self._count(old_key_S, old_key_D, new_key_S, new_key_D, shop, self.lineType[shop])
+
                     # 成功计数一次之后，就需要更新记录了
-                    if door_status == 'passby':  # 留意虚线框
-                        if idx_key_d not in self.tracks[track_id]:
-                            self.tracks[track_id][idx_key_d] = -0.5
-                        else:
-                            self.tracks[track_id][idx_key_d] += 0.5
+                    if door_status == 'mark':  # 留意虚线框
+                        self.tracks[track_id][idx_key_d] = -0.5
+                        self.checkMark[track_id] = (idx_key_s, idx_key_d, shop)
                     if door_status == 'in':  # 删除实线框记录
+                        # t1 2
                         self.tracks[track_id][idx_key_s] = -1
+                        if self.lineType[shop] != 3:  # 类型3需要它监控事件出
+                            self.tracks[track_id][idx_key_d] = -1
                     if door_status == 'out':  # 删除虚线框记录
-                        v = -0.5 if isinstance(old_key_D, float) else -1
-                        self.tracks[track_id][idx_key_d] = v
+                        # t1 2
+                        self.tracks[track_id][idx_key_s] = -1
+                        if self.lineType[shop] == 1:
+                            self.tracks[track_id][idx_key_s] = -0.5  # 可能在实线框里，等待出框
+                        self.tracks[track_id][idx_key_d] = -1
 
         for track_id in self.tracks.keys():
             if current_id - self.tracks[track_id]['latest_frame'] > max_lost_frames:
-                img_data['up']["delete_tracking_id"].append(track_id)
-            if track_id in img_data['up']["delete_tracking_id"]:
-                # if track_id == 4:
-                #     print()
+                img_data["delete_tracking_id"].append(track_id)
+            if track_id in img_data["delete_tracking_id"]:
                 self.tracks[track_id]['status'] = False
 
     def smart_judge(self, track_id):
+        # 现有的碰线逻辑，不在需要连接线段了，先暂时废弃此函数
         '''拼接的基本逻辑是断点的判断；
         但是，目前使用的计数逻辑不是可逆向追溯，所以断点重连，对计数没有帮助。
         但是可以想办法，利用区间计算是否构成进出店等；但有多次计数的风险；
@@ -321,45 +368,56 @@ class FaceCounts(object):
                     if len(self.tracks[track_id]['track']) > 0 and occur:
                         self.draw_track(self.tracks[track_id])
             else:
-                is_combine = self.smart_judge(track_id)
-                if is_combine: continue
+                # is_combine = self.smart_judge(track_id)
+                # if is_combine: continue
                 if cfg_priv.OTHER.COUNT_DRAW:
                     if len(self.tracks[track_id]['track']) > 0 and occur:
                         self.draw_track(self.tracks[track_id])
                 pop_ids.append(track_id)
+                if track_id in self.checkMark:
+                    self.checkMark.pop(track_id)
+
         for track_id in pop_ids:
             self.tracks.pop(track_id)
 
     # 计数逻辑的核心代码
     def _count(self, old_key_S, old_key_D, new_key_S, new_key_D, shop, lineType):
         '''注意：passby比较麻烦，因为经过两次实现框，且短时间内不经过虚线
-        注意2：一旦计数成功，需要清空旧数据，以防虚假判断'''
+        注意2：一旦计数成功，需要清空旧数据，以防虚假判断
+        可以不用考虑必须经过两次实线框或两次虚线框，然后再碰虚实才能判读进出
+        。why，经过了实线框，又经过虚线框，肯定是经过了进门线
+        '''
         double_solid = False  # 两次碰触实线
         if old_key_S > 0 and new_key_S > 0 and old_key_D <= 0 and new_key_D <= 0:
             double_solid = True
-        if lineType == 1:  # 可以不用考虑经过两次实线框，或两次虚线框。why，经过了实线框，又经过虚线框，肯定是经过了进门线
-            if double_solid:
-                return 'passby'  # mark and fcous on dot line
+        if lineType == 3:  # 只管虚线
+            if old_key_D > 0 and new_key_D > 0:
+                self.statics_out[shop] += 1
+                return 'out'
+            elif new_key_D > 0:
+                self.statics_in[shop] += 1
+                return 'in'
+        else:
+            # 先实后虚，则为进
             if new_key_S > 0 and new_key_D > 0 and new_key_D >= new_key_S:
                 self.statics_in[shop] += 1
                 return 'in'
-            if new_key_D > 0 and new_key_S > 0 and new_key_D < new_key_S:
-                self.statics_out[shop] += 1
-                return 'out'
-        elif lineType == 2:
-            if new_key_D > 0 and new_key_S > 0 and new_key_D >= new_key_S:
-                self.statics_in[shop] += 1
-                return 'in'
-            if double_solid or (new_key_D > 0 and new_key_S > 0 and new_key_D < new_key_S):
-                self.statics_out[shop] += 1
-                return 'out'
-        else:  # lineType == 3:
-            if double_solid:
-                self.statics_out[shop] += 1
-                return 'out'
-            elif new_key_S > 0:
-                self.statics_in[shop] += 1
-                return 'in'
+            if lineType == 2:
+                # 先虚后实，则为出
+                if new_key_D > 0 and new_key_S > 0 and new_key_D < new_key_S:
+                    self.statics_out[shop] += 1
+                    return 'out'
+                if double_solid:
+                    self.statics_passby[shop] += 1
+                    return 'out'  # 直接清除
+            if lineType == 1:
+                # 先虚后实实，则为出
+                if new_key_D > 0 and new_key_S > 0 and old_key_S > 0 and new_key_D < new_key_S:
+                    self.statics_out[shop] += 1
+                    return 'out'
+                if double_solid:
+                    # mark and fcous on dot line
+                    return 'mark'
 
     def draw_track(self, track):
         color_map = colormap()
@@ -375,6 +433,12 @@ class FaceCounts(object):
                 new_track = track['track']
                 solid = track['solid']
                 dotted = track['dotted']
+            if len(new_track) > 5:
+                var_thred = 3
+                var_x, var_y = np.var(np.array(new_track), axis=(0))
+                # 如果想当长时间不动就不在显示了
+                if var_x < var_thred and var_y < var_thred:
+                    return
             self.out_info['solid'].append(solid)
             self.out_info['dotted'].append(dotted)
             self.out_info['list_track'].append(new_track)
@@ -433,12 +497,14 @@ class FaceCounts(object):
             C_scores, C_boxes, C_classes = scores.copy(), boxes.copy(), classes.copy()
         status = False
         self.doubleCheckSetParams()
+        # if self.curID == 416:
+        #     print()
         try:
             ##################################
             self.dummpy()
             single_img_info_dict = self.FishEye(scores, boxes, classes, ratio_h, ratio_w, H, W)
             self.get_tracks(single_img_info_dict, self.curID)
-            if len(single_img_info_dict['up']['annotations']):
+            if len(single_img_info_dict['annotations']):
                 status = True
             self.count_num()
             self.send()
@@ -500,13 +566,13 @@ if __name__ == '__main__':
         os.system("rm /home/user/project/run_retina/py_extension/vs/*")
     except Exception as e:
         print("rm debug photo")
-    # test_set(False)
+
     fc = FaceCounts()
     fc.debug = True
     npz = '../build/xxx_%d.npz'
-    n = N = 100
+    n, N = 100, 100
     while True:
-        if not os.path.exists(npz % n) or n / 100 >= 10: break
+        if not os.path.exists(npz % n): break  # or n / 100 >= 10
         print(npz % n)
         data = np.load(npz % n)
         n += N

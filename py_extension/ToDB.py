@@ -32,11 +32,11 @@ class connectDB():
 
 def testcode():
     import cv2
-    npz = '../build/DB_1.npz'
-    data = np.load(npz)
-    data.allow_pickle = True
-    a0 = data['i']
-    pth = '../build/test.jpg'
+    # npz = '../build/DB_1.npz'
+    # data = np.load(npz)
+    # data.allow_pickle = True
+    # a0 = data['i']
+    pth = '/home/user/project/run_retina/photos/flowchart.jpg'
     img = cv2.imread(pth)
     img_str = cv2.imencode('.jpg', img)[1]
     # img_str = img_str.reshape(-1)
@@ -50,7 +50,7 @@ def testcode():
     #         a += 1
     #         b += 1
     img_str0 = img_str.tostring()
-    a00 = base64.b64encode(a0.tostring()).decode()
+    a00 = base64.b64encode(img_str.tostring()).decode()
 
     with open(pth, "rb") as image_file:
         encoded_image = base64.b64encode(image_file.read()).decode()

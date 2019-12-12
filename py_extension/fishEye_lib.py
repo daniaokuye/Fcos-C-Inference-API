@@ -44,6 +44,7 @@ class FishEye(object):
         # this is used for tracking off the wall of two sides
         self.shift = 500 if self.overlap else 0
         self.nms_thres = 0.45
+        self.score_thres = 0.45
         self.del_box = False
         self.Evaluate = False
         self.target_cls = 1
@@ -264,11 +265,23 @@ class FishEye(object):
         #     self.split_map.pop(p)
         # self.split_map['del'] = del_key
 
+    def fliter(self, boxes):
+        # 1: w/h<1.2
+        wh_thred = 1.2
+        w = boxes[..., 2] - boxes[..., 0]
+        h = boxes[..., 3] - boxes[..., 1] + 1e-5
+        wh_ratio = w / h
+        wh_idx = wh_ratio > wh_thred
+        return wh_idx
+
     def rearrange_box_sp3(self, scores, boxes, classes, w, h, ratio, base_batch=3):
         assert len(boxes) % 3 == 0, 'boxes should be 3*n'
         boxes[..., 0::2] *= ratio[0]
         boxes[..., 1::2] *= ratio[1]
         n, nb, _ = boxes.shape
+        # 过滤部分数据
+        idx_ = self.fliter(boxes)
+        scores[idx_] *= 0.5
         # x1,y1,x2,y2; 4. distance; 5.overlaped marker; span marker; 6. left most or right most marker;
         new_boxes = np.concatenate((boxes.astype(np.float32), np.zeros((n, nb, 3), dtype=np.float32)), axis=-1)
         new_boxes[new_boxes[:, :, 2] >= w * 2 // 3, 5] = 1  # 4. those overlaped
@@ -299,7 +312,7 @@ class FishEye(object):
         new_boxes[2::3, :, 1:4:2] += start_y_3
         new_boxes[1::3, :, 0:3:2] += start_x_2
         new_boxes[1::3, :, 1:4:2] += start_y_2
-        idx = (scores >= self.nms_thres) * (classes == self.target_cls)
+        idx = (scores >= self.score_thres) * (classes == self.target_cls)
         # shiftting in case of offing the left side wall
         new_boxes[..., 0:3:2] += self.shift
         new_W, new_H = (ww * 3 + ww // 4 + 2 * self.shift), h // 2
@@ -340,8 +353,8 @@ class FishEye(object):
             upleft = box[upleft_idx, :5] + np.hstack([left_shift_start, 0])
             extra = box[extra_idx, :5]  # manual overlaped box
             res_box = box[~extra_idx, :5]
-            info = {'extra': extra, 'box': res_box, 'ul': upleft, 'ul_idx': np.where(upleft_idx)[0],
-                    'W': new_W, 'H': new_H, 'cut': cut_lines}
+            info = {'extra': extra, 'box': res_box, 'ul': upleft, 'W': new_W, 'H': new_H,
+                    'ul_idx': np.where(upleft_idx[~extra_idx])[0], 'cut': cut_lines}
             ss = score[~extra_idx], score[extra_idx], score[upleft_idx].copy()  # same as box & extra & ul
 
             return info, ss
@@ -423,19 +436,29 @@ class FishEye(object):
                 mapping_ids = id_viewer[ids]['mapping_id']
                 g_id = id_viewer[ids]['global_id']
                 do_nothing = True
+                # 与之相关者移除
                 for mapping_id in mapping_ids:
                     if mapping_id in id_viewer:
+                        # 找到他关联项的关联内容
                         maps = id_viewer[mapping_id]['mapping_id']
                         if ids in maps:
                             maps.pop(maps.index(ids))  # del it from its friends
-                            id_viewer[mapping_id]['mapping_id'] = maps
+                            # id_viewer[mapping_id]['mapping_id'] = maps  # 好像多余
+                            # 移除死亡id
                             if id_viewer[mapping_id]['global_id'] == g_id:
                                 do_nothing = False
-                if do_nothing:  delete_ids.append(g_id)
+                # 移除idmapping关联项
+                # if ids in id_mapping:
+                #     # print('*'*10)
+                #     target = id_mapping[ids]
+                #     id_mapping.pop(ids)
+                #     id_mapping.pop(target)
+                if do_nothing:
+                    delete_ids.append(g_id)
                 if rm_item: id_viewer.pop(ids)  # del it
 
         # prepare connection ids. for all instance
-        id_mapping, track_ids, delete_ids = {}, [], []
+        id_mapping, delete_ids = {}, []
         split_map, sp_del = {}, []
         if self.overlap:
             for p, s in dete_res['map'].items():
@@ -446,11 +469,41 @@ class FishEye(object):
             id_mapping, split_map = self.mapping(dete_res, tracking_id)
 
         # main process---------------
-        for ids in tracking_id:  # [:ori_box_len]
-            gid = set_globlId(ids)
-            track_ids.append(gid)
-        # for all deleted id
-        del_global_ids(delete_tracking_id)
+        def distribut_global_id():
+            # 找到跟踪id和全局分配的id间映射关系。
+            temp_ids = []
+            for ids in tracking_id:  # [:ori_box_len]
+                gid = set_globlId(ids)
+                temp_ids.append(gid)
+            return temp_ids
+
+        track_ids = distribut_global_id()
+        if len(set(track_ids)) != len(track_ids):
+            bad_ids = []
+            # 需要处理冲突 npbbox_iou
+            temp_map, temp_idx = {}, {}
+            ious = npbbox_iou(dete_res['box'], dete_res['box'])
+            for k_id, (temp_id, real_id) in enumerate(zip(track_ids, tracking_id)):
+                if temp_id in temp_map:
+                    temp_map[temp_id].append(real_id)
+                    temp_idx[temp_id].append(k_id)
+                else:
+                    temp_map[temp_id] = [real_id]
+                    temp_idx[temp_id] = [k_id]
+                if len(temp_map[temp_id]) > 1:
+                    _k, _j = temp_idx[temp_id]
+                    iou = ious[_k, _j]
+                    if iou < self.nms_thres:
+                        # 移除后来的
+                        bad_ids.append(max(temp_map[temp_id]))
+                    temp_map[temp_id].pop(-1)
+                    temp_idx[temp_id].pop(-1)
+            if len(bad_ids):
+                delete_tracking_id.extend(list(set(bad_ids)))
+                # for all deleted id
+                del_global_ids(delete_tracking_id)
+                track_ids = distribut_global_id()
+
         id_viewer['id_pool'] = set(id_pool)
         return track_ids, delete_ids
 
@@ -480,7 +533,7 @@ class FishEye(object):
         for ii, (detes_res, score) in enumerate(all_detes_boxes):
 
             detes_boxes = detes_res['box']
-            info = {'up': {"delete_tracking_id": [], "annotations": []}}
+            info = {"delete_tracking_id": [], "annotations": []}
             if (len(detes_boxes)):
                 if not self.overlap:
                     self.gap_detect(detes_boxes[:detes_res['ori']])
@@ -517,7 +570,7 @@ class FishEye(object):
                 #     bbbb.append(box)
                 # print(np.array(bbbb))
                 # get info of images
-                info['up'] = {"delete_tracking_id": delete_tracking_id, "annotations": anno}
+                info = {"delete_tracking_id": delete_tracking_id, "annotations": anno}
 
                 self.profiler.stop('post_')
 
