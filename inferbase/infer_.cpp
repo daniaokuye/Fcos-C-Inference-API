@@ -78,7 +78,7 @@ Infer_RT::~Infer_RT() {
 Infer_RT::Infer_RT(const char *engine_file, const char *input,
                    int meida_id, const char *mac, const char *cyaml,
                    int device, std::string modes) :
-        meida_id(meida_id), mac(mac), stop(false), yaml(cyaml) {
+        meida_id(meida_id), mac(mac), stop(false), baseOnSrc(false), yaml(cyaml) {
     if (cyaml == NULL) {
         std::cerr << "yaml should be set!" << std::endl;
         throw "error";
@@ -130,7 +130,9 @@ void Infer_RT::setInfo(T *ptr, const char *input, int device, std::string modes)
     N_s = run_batch * num_det;
     N_b = run_batch * num_det * 4;
     show_ratio_h = show_ratio_w = 0.4;
-    cv::Size ResImgSiz = cv::Size(dewarper->col_out * show_ratio_w, dewarper->row_out * show_ratio_h);
+    if (baseOnSrc) ResImgSiz = cv::Size(dewarper->cols * show_ratio_w, dewarper->rows * show_ratio_h);
+    else ResImgSiz = cv::Size(dewarper->col_out * show_ratio_w, dewarper->row_out * show_ratio_h);
+    std::cout << "output size:" << ResImgSiz << std::endl;
     for (int iii = 0; iii < 2; iii++) showDsts.push_back(cv::Mat(ResImgSiz, CV_8UC3));
     //python interpreter
     pr = new python_route(h_ratio, w_ratio, dewarper->row_out, dewarper->col_out);
@@ -151,7 +153,7 @@ void Infer_RT::preprocess(bool joinAll, bool cpdst) {
     //std::cout << "joinAll" << joinAll << "cpdst" << cpdst << std::endl;
     unsigned long beg = GetTickCount();
     if (joinAll)dewarper->join_thread();
-    dewarper->process(cpdst);
+    dewarper->process(cpdst, baseOnSrc);
     unsigned long end = GetTickCount();
     std::cout << "preProcess: " << end - beg << "ms\n";
 
@@ -163,9 +165,7 @@ void Infer_RT::process_() {
 
     //std::cout << "Running inference..." << std::endl;
     vector<void *> buffers = {dewarper->data, scores_d, boxes_d, classes_d};
-    //std::cout << "Running inference. over1" << std::endl;
     engine->infer(buffers, run_batch);
-    //std::cout << "Running inference. over2" << std::endl;
     // Get back the bounding boxes
     cudaMemcpy(scores + n_count * N_s, scores_d, sizeof(float) * num_det * run_batch, cudaMemcpyDeviceToHost);
     cudaMemcpy(boxes + n_count * N_b, boxes_d, sizeof(float) * num_det * 4 * run_batch, cudaMemcpyDeviceToHost);
@@ -175,67 +175,40 @@ void Infer_RT::process_() {
 }
 
 
-template<typename T>
-int *expand_line(T *input_x, T *input_y, int n_points, int &idx, const int total = 100) {
-    // "perimeter top angle",90.0; perimeter_bottom_angle, 30.0;
-    int one_third_R = 480, step = 60, *points = new int[total * 2];
-    idx = 0;
-    for (int i = 0; i < n_points; i++) {
-        T delta_w = input_x[(i + 1) % n_points] - input_x[i];
-        T delta_h = input_y[(i + 1) % n_points] - input_y[i];
-        //all肯定不为0
-        float all = sqrt((1.0 * pow(delta_h, 2) + 1.0 * pow(delta_w, 2)));
-        //越接近中间线，步长越大
-        float local_s = 1.0 * step * 3 * one_third_R / (abs(2 * one_third_R - input_y[i]) + one_third_R);
-        int N_step = ceil(all / local_s);
-        float sin_ = 1.0 * delta_h / all, cos_ = 1.0 * delta_w / all, local_step = 1.0 * all / N_step;
-        //闭合图形，不保留终点，只保留起始点
-        for (int j = 0; j < N_step; ++j) {
-            int x_ = int((j * local_step) * cos_ + input_x[i]);
-            int y_ = int((j * local_step) * sin_ + input_y[i]);
-            points[idx] = x_;
-            points[total + idx] = y_;
-            ++idx;
-            if (cos_ >= -1e-3 and cos_ <= 1e-3) break;
-        }
-    }
-    return points;
-}
-
-void Infer_RT::cal_src_ploygon(cv::Mat src, cv::Mat dst) {
-    /*点映射回原图点方法*/
-    int input_X[] = {100, 700, 700, 100}, input_Y[] = {200, 200, 900, 900}, nn_points = 4;
-    int n_points = 0, total_N = 100;
-    int *ret = expand_line(input_X, input_Y, nn_points, n_points, total_N);
-
-    int output_x[n_points], output_y[n_points];
-    int *input_x = ret, *input_y = ret + total_N;
-    dewarper->mappingPolygon(n_points, input_x, input_y, output_x, output_y);
-
-    for (int i = 0; i < n_points; i++) {
-        cv::line(src, cv::Point(output_x[(i + 1) % n_points], output_y[(i + 1) % n_points]),
-                 cv::Point(output_x[i], output_y[i]), cv::Scalar(50, 50, 50), 3);
-        cv::line(dst, cv::Point(input_x[(i + 1) % n_points], input_y[(i + 1) % n_points]),
-                 cv::Point(input_x[i], input_y[i]), cv::Scalar(50, 50, 50), 3);
-    }
-    delete[] ret;
-    cv::imwrite("src.jpg", src);
-    cv::imwrite("dst.jpg", dst);
-}
+//void Infer_RT::cal_src_ploygon(cv::Mat src, cv::Mat dst) {
+//    /*点映射回原图点方法*/
+//    int input_X[] = {100, 700, 700, 100}, input_Y[] = {200, 200, 900, 900}, nn_points = 4;
+//    int n_points = 0, total_N = 100;
+//    int *ret;// = expand_line(input_X, input_Y, nn_points, n_points, total_N);
+//
+//    int output_x[n_points], output_y[n_points];
+//    int *input_x = ret, *input_y = ret + total_N;
+//    dewarper->mappingPolygon(n_points, input_x, input_y, output_x, output_y);
+//
+//    for (int i = 0; i < n_points; i++) {
+//        cv::line(src, cv::Point(output_x[(i + 1) % n_points], output_y[(i + 1) % n_points]),
+//                 cv::Point(output_x[i], output_y[i]), cv::Scalar(50, 50, 50), 3);
+//        cv::line(dst, cv::Point(input_x[(i + 1) % n_points], input_y[(i + 1) % n_points]),
+//                 cv::Point(input_x[i], input_y[i]), cv::Scalar(50, 50, 50), 3);
+//    }
+//    delete[] ret;
+//    cv::imwrite("src.jpg", src);
+//    cv::imwrite("dst.jpg", dst);
+//}
 
 void Infer_RT::_getdst(int No, int eclipse) {
     unsigned long beg = GetTickCount();
     //用来传输、保存等，非高频需求
 
     cv::Mat dst = showDsts[dst_curid];
-    cv::Size ResImgSiz = cv::Size(dst.cols, dst.rows);
     //先判断是否有数据，否则就用错位的数据吧
     if (dewarper->dst.empty() or dst.empty()) {
         //https://blog.csdn.net/jueshiwushuang2007/article/details/8855665
         std::cout << "dst data is empty!";
         return;
     }
-    cv::resize(dewarper->dst, dst, ResImgSiz);
+    if (baseOnSrc) cv::resize(dewarper->src_clone, dst, ResImgSiz);
+    else cv::resize(dewarper->dst, dst, ResImgSiz);
     dewarper->currentImg();
     cv::putText(dst, "Frame No: " + std::to_string(No) + ". Eclipse: " + std::to_string(eclipse) +
                      "ms.", cv::Point(int(1.2 * width * show_ratio_w), int(0.2 * height * show_ratio_h)),
@@ -250,16 +223,16 @@ void Infer_RT::decorate() {
     send_cur = cur;
     cur = dst_curid;
     dst_curid = (dst_curid + 1) % 2;
-    if (showDsts[cur].empty() ||
-        showDsts[cur].rows != dewarper->row_out * show_ratio_h ||
-        showDsts[cur].cols != dewarper->col_out * show_ratio_w) {
+    if (showDsts[cur].empty()) {
         //https://blog.csdn.net/jueshiwushuang2007/article/details/8855665
         std::cout << "decorate data is empty!" << "postProcess cur: " << showDsts[cur].empty() << ','
                   << showDsts[cur].rows << ',' << cur << ',' << dst_curid << "\n";
         return;
     }
-    pr->ParseRet(showDsts[cur], show_ratio_w, show_ratio_h);
+    auto *dobj = baseOnSrc ? dewarper : nullptr;
+    pr->ParseRet(showDsts[cur], show_ratio_w, show_ratio_h, dobj);
     dewarper->saveImg(line, showDsts[cur]);// vedio or img
+//    std::cout << 'r' << showDsts[cur].rows << 'w' << showDsts[cur].cols << std::endl;
     unsigned long end = GetTickCount();
     std::cout << "decorate: " << end - beg << "ms\n";
 }
@@ -357,7 +330,7 @@ void Infer_RT::run() {
             rzdst = std::thread([=] { _getdst(i, eclipse); });//resize dst||当前循环完成5ms
             dst_t = true;
             if (tocanvas) {//不用太频繁的刷新
-                std::cout << "end decorate:" << i << std::endl;
+                //std::cout << "end decorate:" << i << std::endl;
                 tocanvas = false;
                 decor.join();
                 sendDecorate = true;
@@ -385,7 +358,7 @@ void Infer_RT::run() {
 
         eclipse = int(GetTickCount() - t1);
         std::cout << n_post << n_count << "--- No." << ++i << " & " << eclipse <<
-                  " ms ---" << stop << std::endl << std::endl;
+                  " ms ---" << !dewarper->has_frame << " s:" << stop << std::endl << std::endl;
         if (!dewarper->has_frame or stop)break;
     }
     if (dst_t)rzdst.join();

@@ -55,8 +55,8 @@ class FaceCounts(object):
     def dummpy(self):
         '''发送统计消息'''
         if len(self.sendInfoList) > 0 and not self.debug:
-            for content in self.sendInfoList:
-                self.oneItem(content)
+            # for content in self.sendInfoList:
+            #     self.oneItem(content)
             self.sendInfoList = []
         '''查看是否更新图框；如有更新'''
         pth = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'set.json')
@@ -81,7 +81,7 @@ class FaceCounts(object):
                         continue
                     Points = params[keys][shopid]
                     # todo: may change order here: rows, cols
-                    points = np.array([[int(eval(x) * 2.5), int(eval(y) * 2.5)] for x, y in Points], dtype=np.int32)
+                    points = np.array([[int(float(x) * 2.5), int(float(y) * 2.5)] for x, y in Points], dtype=np.int32)
                     Items.append(points)
                 areas.append(Items)
             self.areas = list(zip(*areas))
@@ -476,12 +476,12 @@ class FaceCounts(object):
 
         self.out_info.update({'entran': in_num, 'pass_by': pass_num, 'out_num': out_num})
 
-    def doubleCheckSetParams(self):
-        if not self.set_MACetc:
-            new_pth = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'D_set.json')
-            _pth = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'set.json')
-            if os.path.exists(new_pth):
-                os.system("cp %s %s" % (new_pth, _pth))
+    # def doubleCheckSetParams(self):
+    #     if not self.set_MACetc:
+    #         new_pth = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'D_set.json')
+    #         _pth = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'set.json')
+    #         if os.path.exists(new_pth):
+    #             os.system("cp %s %s" % (new_pth, _pth))
 
     def __call__(self, scores, boxes, classes, ratio_h, ratio_w, H, W):
         self.H, self.W = H, W
@@ -496,7 +496,7 @@ class FaceCounts(object):
         if save_input:
             C_scores, C_boxes, C_classes = scores.copy(), boxes.copy(), classes.copy()
         status = False
-        self.doubleCheckSetParams()
+        # self.doubleCheckSetParams()#有毒
         # if self.curID == 416:
         #     print()
         try:
@@ -547,20 +547,16 @@ if __name__ == '__main__':
 
     test_set()
     # try:
-    #     print("cp xxx*")
     #     os.system("cp /srv/fisheye_prj/AI_Server/xxx_* /home/user/project/run_retina/build/")
     # except Exception as e:
     #     print("cp xxx* error")
     # try:
-    #     print("cp set.json")
-    #     os.system("cp /srv/fisheye_prj/AI_Server/utils/py_extension/D_set.json "
-    #               "/home/user/project/run_retina/py_extension/set.json")
+    #     os.system("cp /srv/fisheye_prj/AI_Server/utils/py_extension/D_set.json /home/user/project/run_retina/py_extension/set.json")
     # except Exception as e:
     #     print("cp set.json")
     # 进出店参数框
     # if os.path.exists('/home/user/project/run_retina/py_extension/D_set.json'):
-    #     os.system("cp /home/user/project/run_retina/py_extension/D_set.json "
-    #               "/home/user/project/run_retina/py_extension/set.json")
+    #     os.system("cp /home/user/project/run_retina/py_extension/D_set.json /home/user/project/run_retina/py_extension/set.json")
     # debug可视图
     try:
         os.system("rm /home/user/project/run_retina/py_extension/vs/*")

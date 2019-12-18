@@ -284,10 +284,10 @@ void CameraView::GetInputPointFromOutputPoint(
     GetInputVideoPointFromPosition(pan, tilt, input_x, input_y);
 }
 
-void CameraView::GetInputPolygonFromOutputPolygon(int num_points,
-                                                  int *output_x, int *output_y, int *input_x, int *input_y) {
-    for (int i = 0; i < num_points; i++) {
-        GetInputPointFromOutputPoint(
-                output_x[i], output_y[i], input_x + i, input_y + i);
+void CameraView::GetInputPolygonFromOutputPolygon(std::vector<float> &output_, float *input_) {
+    int x, y;
+    for (unsigned int i = 0; i < output_.size() / 2; i++) {
+        GetInputPointFromOutputPoint(int(output_[2 * i]), int(output_[2 * i + 1]), &x, &y);
+        input_[2 * i] = float(x), input_[2 * i + 1] = float(y);
     }
 }

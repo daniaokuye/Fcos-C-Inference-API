@@ -2,16 +2,14 @@
 // Created by 李大冲 on 2019-08-25.
 //
 
+#ifndef RETINANET_INFER_INFER_2_H
+#define RETINANET_INFER_INFER_2_H
+
 #include <iostream>
 #include <opencv2/opencv.hpp>
 #include "../csrc/engine.h"
 #include "../dewarp/dewarper.h"
 #include "python_route.h"
-
-#ifndef RETINANET_INFER_INFER_2_H
-#define RETINANET_INFER_INFER_2_H
-
-#endif //RETINANET_INFER_INFER_2_H
 
 class Infer_RT {
 public:
@@ -29,7 +27,7 @@ public:
 
     void preprocess(bool joinAll = false, bool cpdst = false);
 
-    void postprocess(int, bool, bool&);
+    void postprocess(int, bool, bool &);
 
     void _getdst(int, int);
 
@@ -45,7 +43,7 @@ public:
 
     void run();
 
-    void cal_src_ploygon(cv::Mat src, cv::Mat dst);
+//    void cal_src_ploygon(cv::Mat src, cv::Mat dst);
 
     deWarp *dewarper;
     cv::Mat src;
@@ -58,11 +56,22 @@ private:
     int channels, num_det, height, width, slots;
 
     int run_batch, N, N_s, N_b, n_count, n_post;
+
     int meida_id, dst_curid = 1, cur = 1, send_cur;
+
     const char *mac;//, *yaml
+
     float h_ratio, w_ratio, show_ratio_h, show_ratio_w;
+
     float *scores, *boxes, *classes;
+
     python_route *pr;
-    bool stop, testStar;
+
+    bool stop, testStar, baseOnSrc;
+
     std::string yaml, line;
+
+    cv::Size ResImgSiz;
 };
+
+#endif //RETINANET_INFER_INFER_2_H

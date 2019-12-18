@@ -145,9 +145,10 @@ void python_route::PythonPost(void *boxes, void *scores, void *classes, int run_
     Py_DECREF(pArgs);
 }
 
-void python_route::ParseRet(cv::Mat dst, float ratiow, float ratioh) {
+/**/
+void python_route::ParseRet(cv::Mat dst, float ratiow, float ratioh, deWarp *deobj) {
     int half_h = dst.rows / 2;
-    /* 解析返回结果 */
+    // 解析返回结果
     PyArrayObject *r1, *r2, *r3, *r4, *r5, *r6, *r7;
     if (!PyArg_UnpackTuple(selfPost, "ref", 7, 7, &r1, &r2, &r3, &r4, &r5, &r6, &r7)) {
         PyErr_Print();
@@ -179,15 +180,45 @@ void python_route::ParseRet(cv::Mat dst, float ratiow, float ratioh) {
     float *base_r6 = (float *) PyArray_DATA(r6);//进出线框，4*2
     float *base_r7 = (float *) PyArray_DATA(r7);//颜色对应id，(3*N)
     std::vector<float> ids(base_r1, base_r1 + shape1[0]);
-    std::vector<float> track(base_r2, base_r2 + shape2[0] * shape2[1]);
-    std::vector<float> track_num(base_r3, base_r3 + shape3[0]);
-    std::vector<float> box(base_r4, base_r4 + shape4[0] * shape4[1]);
+    //输入mat是原图或2p图时，这三个需要不同定义
+    std::vector<float> track, track_num, box;
+    std::vector<float> Box_line, Box_line_num;
     std::vector<float> statistic(base_r5, base_r5 + shape5[0]);
     std::vector<float> support(base_r6, base_r6 + shape6[0] * shape6[1]);
     std::vector<float> color(base_r7, base_r7 + shape7[0]);
+    if (deobj != nullptr) {
+        int base_num = 0;
+        for (auto i = 0; i < shape1[0]; i++) {
+            int num = int(base_r3[i]), total_line = num * shape2[1], total_box;
+            float *tmp = base_r2 + base_num * shape2[1];
+            std::vector<float> poloyline, poloygons;
+
+            //line
+            poloyline.insert(poloyline.end(), tmp, tmp + num * shape2[1]);
+            float output_[total_line];
+            deobj->mappingPolygon(poloyline, output_);
+            track.insert(track.end(), output_, output_ + total_line);
+            track_num.push_back(num);
+            base_num += num;
+
+            //box
+            tmp = base_r4 + i * shape4[1];
+            expand_box(tmp, poloygons);
+            total_box = int(poloygons.size());
+            float b_output_[total_box];
+            deobj->mappingPolygon(poloygons, b_output_);
+            Box_line.insert(Box_line.end(), b_output_, b_output_ + total_box);
+            Box_line_num.push_back(total_box / 2);
+        }
+    } else {
+        track.insert(track.end(), base_r2, base_r2 + shape2[0] * shape2[1]);
+        track_num.insert(track_num.end(), base_r3, base_r3 + shape3[0]);
+    }
+    box.insert(box.end(), base_r4, base_r4 + shape4[0] * shape4[1]);
+
     int cw = shape1[0] > 0 ? shape7[0] / shape1[0] : 3;
-    //track line;
-    for (auto i = 0, j = 0; i < shape3[0]; i++) {
+    //track line;画图
+    for (auto i = 0, j = 0, m = 0; i < shape3[0]; i++) {
         if (i > track_num.size() or i > box.size())break;
         int len = int(track_num[i]), id = int(ids[i]);
         int r = int(color[cw * i]), g = int(color[cw * i + 1]), b = int(color[cw * i + 2]);
@@ -212,14 +243,28 @@ void python_route::ParseRet(cv::Mat dst, float ratiow, float ratioh) {
                      cv::Point(track[2 * k] * ratiow, track[2 * k + 1] * ratioh), cv::Scalar(r, g, b), style);
         }
         j += len;
-        cv::putText(dst, std::to_string(id), cv::Point(int(x1 * ratiow) + 6, int(y1 * ratioh) + 6),
-                    cv::FONT_HERSHEY_PLAIN, Mmax(2.0, style * 0.8), cv::Scalar(r, g, b), int(style * 0.8));
-        cv::rectangle(dst, cv::Point(x1 * ratiow, y1 * ratioh),
-                      cv::Point((x1 + w) * ratiow, (y1 + h) * ratiow), cv::Scalar(r, g, b), style);
+        if (deobj != nullptr) {
+            len = int(Box_line_num[i]);
+            for (auto k = m; k < m + len; k++) {
+                if (k == m)continue;
+                if (2 * k > Box_line.size())break;
+                cv::line(dst, cv::Point(Box_line[2 * k - 2] * ratiow, Box_line[2 * k - 1] * ratioh),
+                         cv::Point(Box_line[2 * k] * ratiow, Box_line[2 * k + 1] * ratioh), cv::Scalar(r, g, b), style);
+            }
+            cv::putText(dst, std::to_string(id),
+                        cv::Point(int(Box_line[2 * m] * ratiow) + 6, int(Box_line[2 * m + 1] * ratioh) + 6),
+                        cv::FONT_HERSHEY_PLAIN, Mmax(2.0, style * 0.8), cv::Scalar(r, g, b), int(style * 0.8));
+            m += len;
+        } else {
+            cv::putText(dst, std::to_string(id), cv::Point(int(x1 * ratiow) + 6, int(y1 * ratioh) + 6),
+                        cv::FONT_HERSHEY_PLAIN, Mmax(2.0, style * 0.8), cv::Scalar(r, g, b), int(style * 0.8));
+            cv::rectangle(dst, cv::Point(x1 * ratiow, y1 * ratioh),
+                          cv::Point((x1 + w) * ratiow, (y1 + h) * ratiow), cv::Scalar(r, g, b), style);
+        }
 //        std::cout << "c:" << r << ", " << g << ", " << b << ";";
     }
-    /*  Py_DECREF(selfPost);
-      */
+    // Py_DECREF(selfPost);
+
 
 //    std::cout << std::endl;
 
@@ -244,6 +289,7 @@ void python_route::ParseRet(cv::Mat dst, float ratiow, float ratioh) {
 
 }
 
+/**/
 
 void python_route::PythonInfer(int batch, int row, int col, void *ipt) {
     /* 准备输入参数 */
@@ -290,5 +336,84 @@ int pymain(int argc, char *argv[]) {
     python_route pr = python_route(0, 0, 0, 0);
     pr.RunModel(row, col, sml_img.data);
     return 0;
+}
+
+
+//template<typename T>int &idx, const int total,
+void expand_line(float *input_, int n_points, std::vector<int> &output_) {
+    // "perimeter top angle",90.0; perimeter_bottom_angle, 30.0;
+    //是否为闭合曲线，需要区别对待
+    //480是内圈半径，但不严格，用来度量最内圈应该用多大的步长。
+    //setp是最外圈的步长，也就是在2p图上最小的像素步长，越靠近内圈步长越大
+    int one_third_R = 480, step = STEP, i = 0;
+    for (; i < n_points - 1; i++) {
+        float delta_w = input_[2 * (i + 1)] - input_[2 * i];
+        float delta_h = input_[2 * (i + 1) + 1] - input_[2 * i + 1];
+        //all肯定不为0
+        float all = sqrt((1.0 * pow(delta_h, 2) + 1.0 * pow(delta_w, 2)));
+        if (all <= step) {
+            output_.push_back(input_[2 * i]);
+            output_.push_back(input_[2 * i + 1]);
+            continue;
+        }
+        //错误是：会产生横跨2p图的线条；
+//        //越接近中间线，步长越大
+        float local_s = 1.0 * step * 3 * one_third_R / (abs(2 * one_third_R - input_[2 * i + 1]) + one_third_R);
+        int N_step = ceil(all / local_s);
+        float sin_ = 1.0 * delta_h / all, cos_ = 1.0 * delta_w / all, local_step = 1.0 * all / N_step;
+//        std::cout << "locals:" << local_s << ',' << N_step<<','<<local_step << std::endl;
+//        std::cout << "locals:" << input_[2 * i] << ',' <<input_[2 * i + 1] << std::endl;
+        //闭合图形，不保留终点，只保留起始点
+        for (int j = 0; j < N_step; ++j) {
+            int x_ = int((j * local_step) * cos_ + input_[2 * i]);
+            int y_ = int((j * local_step) * sin_ + input_[2 * i + 1]);
+            output_.push_back(x_);
+            output_.push_back(y_);
+            if (cos_ >= -1e-2 and cos_ <= 1e-2) break;//认为在半径上是没有拉伸的,只加第一个点
+        }
+    }
+    i = n_points - 1;
+    output_.push_back(int(input_[2 * i]));
+    output_.push_back(int(input_[2 * i + 1]));
+}
+
+void expand_box(float *input_, std::vector<float> &output_) {
+    // "perimeter top angle",90.0; perimeter_bottom_angle, 30.0;
+    //input: x1y1wh
+    //480是内圈半径，但不严格，用来度量最内圈应该用多大的步长。
+    //setp是最外圈的步长，也就是在2p图上最小的像素步长，越靠近内圈步长越大
+//     vector<int>out_x,out_y,out_;
+    int one_third_R = 480, step = STEP;
+    //idx = 0;
+    float x1 = round(input_[0]), y1 = round(input_[1]),
+            w = round(input_[2]), h = round(input_[3]);
+//    std::cout << "box:" << x1 << ',' << y1 << ',' << w << ',' << h << std::endl;
+
+    float w_idx[] = {0, 0, 1, 1}, h_idx[] = {0, 1, 1, 0};
+    //left bottom right top
+    for (int i = 0; i < 4; i++) {
+        float x_ = x1 + w * w_idx[i];
+        float y_ = y1 + h * h_idx[i];
+        if (i % 2 == 0) {
+            output_.push_back(x_);
+            output_.push_back(y_);
+//            std::cout << "  " << x_ << ", " << y_ << std::endl;
+        } else {
+            //越接近中间线，步长越大 (3*step)* delta; delta = r/(r +|2r-h|); delta = [1/3, 1]
+            float local_s = 1.0 * step * 3 * one_third_R / (abs(2 * one_third_R - y_) + one_third_R);
+            int N_step = ceil(w / local_s);
+            float local_step = (-1.0) * (i / 2) * w / N_step;
+            //闭合图形，不保留终点，只保留起始点
+            for (int j = 0; j < N_step; ++j) {
+                output_.push_back(j * local_step + x_);
+                output_.push_back(y_);
+//                std::cout << "  " << j * local_step + x_ << ", " << y_ << std::endl;
+            }
+        }
+//        std::cout << "box I:" << i << "box x:" << x_ << "box y:" << y_ << std::endl;
+    }
+    //add first one point again
+    output_.push_back(x1);
+    output_.push_back(y1);
 }
 

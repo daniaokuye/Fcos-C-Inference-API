@@ -5,12 +5,11 @@
 #ifndef RETINANET_INFER_DEWARPER_H
 #define RETINANET_INFER_DEWARPER_H
 
-#endif //RETINANET_INFER_DEWARPER_H
-
 #include <iostream>
 #include <opencv2/opencv.hpp>
 #include <queue>
 #include <thread>
+#include <vector>
 
 //#include <gflags/gflags.h>
 //#include "split.h"
@@ -36,7 +35,7 @@ public:
 
     ~deWarp();
 
-    void process(bool cpdst = false);
+    void process(bool cpdst = false, bool baseOnSrc = false);
 
     int test();
 
@@ -57,11 +56,11 @@ public:
 
     void join_dst();
 
-    void mappingPolygon(int num_points, int *output_x, int *output_y, int *input_x, int *input_y);
+    void mappingPolygon(std::vector<float> &output_, float *input_);
 
     void *data;//, *Img
-    cv::Mat src, dst;
-    int row_out, col_out, current_frame;
+    cv::Mat src, dst, src_clone;
+    int rows, cols, row_out, col_out, current_frame;
     float ratio_w, ratio_h;
     bool has_frame;
 private:
@@ -76,7 +75,7 @@ private:
     const char *rpl;
     void *camera;
     double fps;
-    int rows, cols, slots, n_slots, last_slots, dst_slots;
+    int slots, n_slots, last_slots, dst_slots;
     cv::Size srcSize;
     cv::VideoWriter writer;
     bool save_video, save_photo, init_, readSwitch;
@@ -84,3 +83,5 @@ private:
     std::queue <cv::Mat> mul_mat;
     int extraDst;
 };
+
+#endif //RETINANET_INFER_DEWARPER_H

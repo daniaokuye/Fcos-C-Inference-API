@@ -222,7 +222,7 @@ void deWarp::saveImg(std::string filename, cv::Mat ResImg, bool savebase) {
             init_ = true;
             std::cout << "Init vedio: " << ResImgSiz << "col:" << ResImg.cols << " row" << ResImg.rows << std::endl;
             //    writer.open("dete_" + s, fourcc, fps, cv::Size(col_out, row_out));
-            writer.open("dete_" + rs + "_.avi", CV_FOURCC('M', 'J', 'P', 'G'), 20, ResImgSiz);
+            writer.open("dete_" + rs + "_.avi", CV_FOURCC('M', 'J', 'P', 'G'), 8, ResImgSiz);
             if (!writer.isOpened()) {
                 std::cerr << "Unable to open video file for writing" << std::endl;
                 throw "error";
@@ -249,7 +249,7 @@ bool deWarp::checkStatus() {
     return false;
 }
 
-void deWarp::process(bool cpdst) {
+void deWarp::process(bool cpdst, bool baseOnSrc) {
     readSwitch = false;
     /* 1.read img to queqe异步读取*/
     readsrc = std::thread([=] {
@@ -263,7 +263,11 @@ void deWarp::process(bool cpdst) {
     });
 
     /* 2.run main function展开及切图成块*/
-    if (cpdst) getdst = std::thread([=] { ((CameraView *) camera)->getOutput(); });
+    if (cpdst)
+        getdst = std::thread([=] {
+            if (baseOnSrc)src.copyTo(src_clone);
+            else ((CameraView *) camera)->getOutput();
+        });
 
     mul_mat.front().copyTo(src);
     mul_mat.pop();
@@ -301,11 +305,10 @@ void deWarp::currentImg() {
 void deWarp::currentStatus() {
     ((CameraView *) camera)->sp->get_refer();
     data = ((CameraView *) camera)->sp->refer_dyn;
-
 }
 
-void deWarp::mappingPolygon(int num_points, int *output_x, int *output_y, int *input_x, int *input_y) {
-    ((CameraView *) camera)->GetInputPolygonFromOutputPolygon(num_points, output_x, output_y, input_x, input_y);
+void deWarp::mappingPolygon(std::vector<float> &output_, float *input_) {
+    ((CameraView *) camera)->GetInputPolygonFromOutputPolygon(output_, input_);
 }
 
 cv::Size CalculateSize() {

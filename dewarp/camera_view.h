@@ -27,11 +27,9 @@ public:
 
     void Process();
 
-    void GetInputPointFromOutputPoint(
-            int output_x, int output_y, int *input_x, int *input_y);
+    void GetInputPointFromOutputPoint(int output_x, int output_y, int *input_x, int *input_y);
 
-    void GetInputPolygonFromOutputPolygon(int num_points,
-                                          int *output_x, int *output_y, int *input_x, int *input_y);
+    void GetInputPolygonFromOutputPolygon(std::vector<float> &output_, float *input_);
 
     void resetOutput(unsigned char *output_data);
 
